@@ -1,73 +1,63 @@
-# React + TypeScript + Vite
+# 💰 Gestor de Despesas Consciente
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+[![CI - Integração Contínua](https://github.com/ali203939/GestaoDespesas/actions/workflows/ci.yml/badge.svg)](https://github.com/ali203939/GestaoDespesas/actions)
+![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
+![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)
+![Vitest](https://img.shields.io/badge/Vitest-6E9F18?style=for-the-badge&logo=vitest&logoColor=white)
 
-Currently, two official plugins are available:
+## 🎯 Sobre o Projeto
+O **Gestor de Despesas** é uma aplicação web focada em resolver a desorganização financeira pessoal. Através de uma interface intuitiva e responsiva, o usuário pode gerenciar sua renda, registrar gastos por categorias e ter um feedback visual imediato sobre sua saúde financeira.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+Este projeto foi desenvolvido seguindo rigorosos padrões de engenharia de software, incluindo **Testes Automatizados**, **CI/CD** e princípios de **UX/UI Design**.
 
-## React Compiler
+## 🚀 Funcionalidades Principais (CRUD Completo)
+- **Renda Dinâmica:** Defina sua receita e veja o saldo ser atualizado em tempo real.
+- **Registro de Gastos:** Adicione despesas com descrição, valor e categorias (Essencial, Saúde, Transporte, Lazer, Outros).
+- **Edição Inteligente:** Altere qualquer registro clicando no ícone de lápis (✎).
+- **Exclusão Segura:** Remova gastos com confirmação de segurança (✕).
+- **Categorização Visual:** Tags coloridas que facilitam a identificação rápida dos tipos de gastos.
+- **Design Responsivo:** Experiência fluida tanto em Desktop quanto em dispositivos Móveis.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## 🛠️ Tecnologias Utilizadas
+- **Core:** [React 18](https://react.dev/) com [Vite](https://vitejs.dev/).
+- **Linguagem:** [TypeScript](https://www.typescriptlang.org/) para maior segurança e tipagem de dados.
+- **Testes:** [Vitest](https://vitest.dev/) e [React Testing Library](https://testing-library.com/docs/react-testing-library/intro/).
+- **Estilo:** CSS3 moderno com foco em **Acessibilidade de Contraste** e **Glassmorphism**.
+- **Automação:** [GitHub Actions](https://github.com/features/actions) configurado para rodar Lint e Testes a cada Push (Node 24).
 
-## Expanding the ESLint configuration
+## 🧪 Qualidade de Software
+O projeto conta com uma suíte de testes automatizados que cobrem os principais fluxos:
+1. **Renderização:** Valida se a interface carrega os elementos essenciais.
+2. **Cálculo de Saldo:** Garante que a matemática (Renda - Despesa) está correta.
+3. **Fluxo de Adição/Exclusão:** Simula o comportamento real do usuário final.
+4. **Casos Limite:** Teste de saldo negativo para feedback de alerta ao usuário.
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## 📸 Preview
+![Preview do Projeto](./Screenshot.png)
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+## Versão: 1.0.0
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+## Licença: MIT
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+## Desenvolvido por: Ali de brito
+
+## Para rodar os testes localmente:
+```bash
+npm run test
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## 🏗️ Como Executar
+Clone o repositório:
+```Bash
+git clone [https://github.com/ali203939/GestaoDespesas]
+```
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## Instale as dependências
+```Bash
+npm install
+```
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+## Inicie o servidor de desenvolvimento:
+```Bash
+npm run dev
 ```

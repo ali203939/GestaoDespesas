@@ -5,7 +5,7 @@ interface Expense {
   id: number;
   descricao: string;
   quantidade: number;
-  categoria: 'Essencial' | 'Lazer' | 'Saúde' | 'Transporte' | 'Outros';
+  categoria: 'Essencial' | 'Comida' | 'Saúde' | 'Transporte' | 'Outros';
 }
 
 function App() {
@@ -98,11 +98,13 @@ function App() {
                 value={quantidade}
                 onChange={(e) => setQuantidade(e.target.value)}
               />
-              <select value={categoria} onChange={(e) => setCategoria(e.target.value as any)}>
+                <select 
+                  value={categoria} 
+                  onChange={(e) => setCategoria(e.target.value as Expense['categoria'])} >
                 <option value="Essencial">🟢 Essencial</option>
                 <option value="Saúde">🏥 Saúde</option>
                 <option value="Transporte">🚗 Transporte</option>
-                <option value="Lazer">🍕 Lazer</option>
+                <option value="Comida">🍕 Comida</option>
                 <option value="Outros">⚪ Outros</option>
               </select>
               <button className={`btn-add ${editandoId !== null ? 'btn-edit-mode' : ''}`} onClick={salvarDespesa}>
