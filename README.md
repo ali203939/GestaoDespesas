@@ -6,7 +6,7 @@
 ![Vitest](https://img.shields.io/badge/Vitest-6E9F18?style=for-the-badge&logo=vitest&logoColor=white)
 
 ## 🎯 Sobre o Projeto
-O **Gestor de Despesas** é uma aplicação web focada em resolver a desorganização financeira pessoal. Através de uma interface intuitiva e responsiva, o usuário pode gerenciar sua renda, registrar gastos por categorias e ter um feedback visual imediato sobre sua saúde financeira.
+O **Gestor de Despesas Consciente** é uma aplicação web focada em resolver a desorganização financeira pessoal. Através de uma interface intuitiva e responsiva, o usuário pode gerenciar sua renda, registrar gastos por categorias e ter um feedback visual imediato sobre sua saúde financeira.
 
 Este projeto foi desenvolvido seguindo rigorosos padrões de engenharia de software, incluindo **Testes Automatizados**, **CI/CD** e princípios de **UX/UI Design**.
 

@@ -10,7 +10,7 @@ describe('Gestor de Despesas - Testes de Fluxo Financeiro', () => {
   // Teste 1: Sanidade (Renderização)
   it('deve renderizar o cabeçalho e os campos iniciais', () => {
     render(<App />);
-    expect(screen.getByText(/Gestor de Despesas/i)).toBeInTheDocument();
+    expect(screen.getByText(/Gestor de Despesas Consciente/i)).toBeInTheDocument();
     expect(screen.getByPlaceholderText(/R\$ 0,00/i)).toBeInTheDocument();
   });
 

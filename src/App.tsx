@@ -64,7 +64,7 @@ function App() {
     <div className="app-wrapper">
       <div className="container">
         <header className="header">
-          <h1>💰 Gestor de Despesas</h1>
+          <h1>💰 Gestor de Despesas Consciente</h1>
           <p>Sua saúde financeira em um só lugar.</p>
         </header>
 
