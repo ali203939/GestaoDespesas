@@ -1,121 +1,146 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+import { useState } from 'react';
+import './App.css';
 
-function App() {
-  const [count, setCount] = useState(0)
-
-  return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
-
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+interface Expense {
+  id: number;
+  descricao: string;
+  quantidade: number;
+  categoria: 'Essencial' | 'Lazer' | 'Saúde' | 'Transporte' | 'Outros';
 }
 
-export default App
+function App() {
+  const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [renda, setRenda] = useState<number>(0);
+  const [descricao, setDescricao] = useState('');
+  const [quantidade, setQuantidade] = useState('');
+  const [categoria, setCategoria] = useState<Expense['categoria']>('Essencial');
+  const [editandoId, setEditandoId] = useState<number | null>(null);
+
+  const salvarDespesa = () => {
+    const valorNum = parseFloat(quantidade);
+    if (!descricao || isNaN(valorNum) || valorNum <= 0) return;
+
+    if (editandoId !== null) {
+      // Lógica de Editar
+      setExpenses(expenses.map(exp => 
+        exp.id === editandoId 
+        ? { ...exp, descricao, quantidade: valorNum, categoria } 
+        : exp
+      ));
+      setEditandoId(null);
+    } else {
+      // Lógica de Adicionar
+      const novaDespesa: Expense = {
+        id: Date.now(),
+        descricao,
+        quantidade: valorNum,
+        categoria
+      };
+      setExpenses([novaDespesa, ...expenses]);
+    }
+
+    setDescricao('');
+    setQuantidade('');
+  };
+
+  const prepararEdicao = (exp: Expense) => {
+    setEditandoId(exp.id);
+    setDescricao(exp.descricao);
+    setQuantidade(exp.quantidade.toString());
+    setCategoria(exp.categoria);
+    window.scrollTo({ top: 0, behavior: 'smooth' }); // Sobe para o formulário
+  };
+
+  const removerDespesa = (id: number) => {
+    if (window.confirm("Deseja realmente excluir este gasto?")) {
+      setExpenses(expenses.filter(exp => exp.id !== id));
+    }
+  };
+
+  const totalDespesas = expenses.reduce((acc, curr) => acc + curr.quantidade, 0);
+  const saldoFinal = renda - totalDespesas;
+
+  return (
+    <div className="app-wrapper">
+      <div className="container">
+        <header className="header">
+          <h1>💰 Gestor de Despesas</h1>
+          <p>Sua saúde financeira em um só lugar.</p>
+        </header>
+
+        <div className="dashboard">
+          <div className="balance-card incoming">
+            <span>Renda Total</span>
+            <input 
+              type="number" 
+              placeholder="R$ 0,00"
+              onChange={(e) => setRenda(Number(e.target.value) || 0)}
+            />
+          </div>
+          <div className={`balance-card status ${saldoFinal < 0 ? 'negative' : 'positive'}`}>
+            <span>Saldo Restante</span>
+            <h2>R$ {saldoFinal.toFixed(2)}</h2>
+          </div>
+        </div>
+
+        <main className="main-content">
+          <section className="form-container">
+            <h3>{editandoId !== null ? '📝 Editar Gasto' : '✨ Nova Transação'}</h3>
+            <div className="input-group">
+              <input 
+                placeholder="O que você comprou/gastou?" 
+                value={descricao}
+                onChange={(e) => setDescricao(e.target.value)}
+              />
+              <input 
+                type="number" 
+                placeholder="Valor R$" 
+                value={quantidade}
+                onChange={(e) => setQuantidade(e.target.value)}
+              />
+              <select value={categoria} onChange={(e) => setCategoria(e.target.value as any)}>
+                <option value="Essencial">🟢 Essencial</option>
+                <option value="Saúde">🏥 Saúde</option>
+                <option value="Transporte">🚗 Transporte</option>
+                <option value="Lazer">🍕 Lazer</option>
+                <option value="Outros">⚪ Outros</option>
+              </select>
+              <button className={`btn-add ${editandoId !== null ? 'btn-edit-mode' : ''}`} onClick={salvarDespesa}>
+                {editandoId !== null ? 'Atualizar Gasto' : 'Adicionar Gasto'}
+              </button>
+              {editandoId !== null && (
+                <button className="btn-cancel" onClick={() => {setEditandoId(null); setDescricao(''); setQuantidade('');}}>
+                  Cancelar
+                </button>
+              )}
+            </div>
+          </section>
+
+          <section className="list-container">
+            <h3>Histórico de Gastos ({expenses.length})</h3>
+            <div className="scroll-area">
+              {expenses.length === 0 && <p className="empty-msg">Nenhum gasto registrado ainda.</p>}
+              {expenses.map(exp => (
+                <div key={exp.id} className="expense-card">
+                  <div className="exp-info">
+                    <strong>{exp.descricao}</strong>
+                    <span className={`tag ${exp.categoria.toLowerCase()}`}>{exp.categoria}</span>
+                  </div>
+                  <div className="exp-actions-group">
+                    <span className="exp-value">- R$ {exp.quantidade.toFixed(2)}</span>
+                    <div className="action-buttons">
+                      <button className="btn-icon edit" onClick={() => prepararEdicao(exp)} title="Editar">✎</button>
+                      <button className="btn-icon delete" onClick={() => removerDespesa(exp.id)} title="Excluir">✕</button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        </main>
+      </div>
+    </div>
+  );
+}
+
+export default App;
