@@ -49,7 +49,7 @@ npm run test
 ## 🏗️ Como Executar
 Clone o repositório:
 ```Bash
-git clone [https://github.com/ali203939/GestaoDespesas]
+git clone https://github.com/ali203939/GestaoDespesas
 ```
 
 ## Instale as dependências
