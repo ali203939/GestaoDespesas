@@ -41,6 +41,9 @@ O projeto conta com uma suíte de testes automatizados que cobrem os principais 
 
 ## Desenvolvido por: Ali de brito
 
+Importante
+- Node.js >= 20.3.1 (recomendado)
+  
 ## Para rodar os testes localmente:
 ```bash
 npm run test
