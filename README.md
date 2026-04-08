@@ -12,7 +12,7 @@ Este projeto foi desenvolvido seguindo rigorosos padrões de engenharia de softw
 
 ## 🚀 Funcionalidades Principais (CRUD Completo)
 - **Renda Dinâmica:** Defina sua receita e veja o saldo ser atualizado em tempo real.
-- **Registro de Gastos:** Adicione despesas com descrição, valor e categorias (Essencial, Saúde, Transporte, Lazer, Outros).
+- **Registro de Gastos:** Adicione despesas com descrição, valor e categorias (Essencial, Saúde, Transporte, Lazer,Comida, Outros).
 - **Edição Inteligente:** Altere qualquer registro clicando no ícone de lápis (✎).
 - **Exclusão Segura:** Remova gastos com confirmação de segurança (✕).
 - **Categorização Visual:** Tags coloridas que facilitam a identificação rápida dos tipos de gastos.
@@ -50,6 +50,7 @@ npm run test
 Clone o repositório:
 ```Bash
 git clone https://github.com/ali203939/GestaoDespesas
+cd GestaoDespesas
 ```
 
 ## Instale as dependências
@@ -60,4 +61,19 @@ npm install
 ## Inicie o servidor de desenvolvimento:
 ```Bash
 npm run dev
+```
+
+## Acesse o localhost:
+```Bash
+npm run dev
+```
+
+# Testes:
+```Bash
+npm run test
+```
+
+# Lint:
+```Bash
+npm run lint
 ```
