@@ -4,79 +4,57 @@
 ![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
 ![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)
 ![Vitest](https://img.shields.io/badge/Vitest-6E9F18?style=for-the-badge&logo=vitest&logoColor=white)
+![Vercel](https://img.shields.io/badge/Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white)
+
+## 🚀 Link do Projeto Online
+**Aceda à aplicação aqui:** [Gestor de Despesas Consciente — Deploy Vercel](https://gestao-despesas-of003rkik-ali203939s-projects.vercel.app/)
+
+---
 
 ## 🎯 Sobre o Projeto
-O **Gestor de Despesas Consciente** é uma aplicação web focada em resolver a desorganização financeira pessoal. Através de uma interface intuitiva e responsiva, o usuário pode gerenciar sua renda, registrar gastos por categorias e ter um feedback visual imediato sobre sua saúde financeira.
+O **Gestor de Despesas Consciente** é uma ferramenta de gestão financeira pessoal que permite aos utilizadores controlar a sua saúde financeira de forma intuitiva. A aplicação combina funcionalidades de registo de gastos (CRUD) com dados externos em tempo real para auxiliar na tomada de decisões.
 
-Este projeto foi desenvolvido seguindo rigorosos padrões de engenharia de software, incluindo **Testes Automatizados**, **CI/CD** e princípios de **UX/UI Design**.
+Este projeto foi desenvolvido como parte da **Entrega Intermediária do BootCamp**, focando-se em:
+- Gestão de demandas via **GitHub Issues**.
+- Consumo de **APIs RESTful**.
+- Qualidade de código com **Testes de Integração**.
+- **CI/CD** e Deploy contínuo.
 
-## 🚀 Funcionalidades Principais (CRUD Completo)
-- **Renda Dinâmica:** Defina sua receita e veja o saldo ser atualizado em tempo real.
-- **Registro de Gastos:** Adicione despesas com descrição, valor e categorias (Essencial, Saúde, Transporte, Lazer,Comida, Outros).
-- **Edição Inteligente:** Altere qualquer registro clicando no ícone de lápis (✎).
-- **Exclusão Segura:** Remova gastos com confirmação de segurança (✕).
-- **Categorização Visual:** Tags coloridas que facilitam a identificação rápida dos tipos de gastos.
-- **Design Responsivo:** Experiência fluida tanto em Desktop quanto em dispositivos Móveis.
+## ✨ Novas Funcionalidades (Etapa 2)
+- **Integração com API Pública:** Consumo em tempo real da cotação do Dólar (USD/BRL) via [AwesomeAPI](https://docs.awesomeapi.com.br/), permitindo uma visão macroeconómica integrada no dashboard.
+- **Testes de Integração:** Validação automatizada do fluxo de dados entre a aplicação e a API externa.
+- **Interface Glassmorphism:** Estilização moderna utilizando filtros de desfoque e transparências em CSS3.
 
 ## 🛠️ Tecnologias Utilizadas
-- **Core:** [React 18](https://react.dev/) com [Vite](https://vitejs.dev/).
-- **Linguagem:** [TypeScript](https://www.typescriptlang.org/) para maior segurança e tipagem de dados.
-- **Testes:** [Vitest](https://vitest.dev/) e [React Testing Library](https://testing-library.com/docs/react-testing-library/intro/).
-- **Estilo:** CSS3 moderno com foco em **Acessibilidade de Contraste** e **Glassmorphism**.
-- **Automação:** [GitHub Actions](https://github.com/features/actions) configurado para rodar Lint e Testes a cada Push (Node 24).
+- **Frontend:** [React 18](https://react.dev/) com [Vite](https://vitejs.dev/).
+- **Linguagem:** [TypeScript](https://www.typescriptlang.org/).
+- **Testes:** [Vitest](https://vitest.dev/) e [React Testing Library](https://testing-library.com/).
+- **Hospedagem:** [Vercel](https://vercel.com/).
+- **Pipeline:** [GitHub Actions](https://github.com/features/actions) (Lint & Testes).
 
-## 🧪 Qualidade de Software
-O projeto conta com uma suíte de testes automatizados que cobrem os principais fluxos:
-1. **Renderização:** Valida se a interface carrega os elementos essenciais.
-2. **Cálculo de Saldo:** Garante que a matemática (Renda - Despesa) está correta.
-3. **Fluxo de Adição/Exclusão:** Simula o comportamento real do usuário final.
-4. **Casos Limite:** Teste de saldo negativo para feedback de alerta ao usuário.
+## 🧪 Qualidade e Manutenção
+A aplicação mantém uma pipeline de CI (Integração Contínua) ativa:
+1. **Linting:** Padronização de código com ESLint.
+2. **Testes Unitários e de Integração:** Validação de cálculos de saldo, adição/remoção de despesas e resposta da API de moedas.
+3. **Build:** Garantia de que o projeto está pronto para produção a cada commit.
 
 ## 📸 Preview
 ![Preview do Projeto](./Screenshot.png)
 
-## Versão: 1.0.0
+---
 
-## Licença: MIT
+## 🏗️ Como Executar Localmente
 
-## Desenvolvido por: Ali de brito
+### Pré-requisitos
+- Node.js >= 20.3.1
 
-Importante
-- Node.js >= 20.3.1 (recomendado)
-  
-## Para rodar os testes localmente:
+### Instalação
 ```bash
-npm run test
-```
+# Clone o repositório
+git clone [https://github.com/ali203939/GestaoDespesas](https://github.com/ali203939/GestaoDespesas)
 
-## 🏗️ Como Executar
-Clone o repositório:
-```Bash
-git clone https://github.com/ali203939/GestaoDespesas
+# Aceda à pasta
 cd GestaoDespesas
-```
 
-## Instale as dependências
-```Bash
+# Instale as dependências
 npm install
-```
-
-## Inicie o servidor de desenvolvimento:
-```Bash
-npm run dev
-```
-
-## Acesse o localhost:
-```Bash
-npm run dev
-```
-
-# Testes:
-```Bash
-npm run test
-```
-
-# Lint:
-```Bash
-npm run lint
-```
