@@ -1,45 +1,65 @@
-import { render, screen, fireEvent } from '@testing-library/react';
-import { describe, it, expect, vi } from 'vitest';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import App from '../App';
+import * as api from '../services/api';
 
-// Mock do window.confirm para o teste de remoção não travar
+// 1. Mock global da API para evitar chamadas reais durante os testes
+vi.mock('../services/api', () => ({
+  getDollarRate: vi.fn(),
+}));
+
+// Criamos uma versão tipada do mock para evitar o uso de 'any'
+const mockedGetDollarRate = vi.mocked(api.getDollarRate);
+
+// Mock do window.confirm para o teste de remoção
 window.confirm = vi.fn(() => true);
 
-describe('Gestor de Despesas - Testes de Fluxo Financeiro', () => {
+describe('Gestor de Despesas - Testes de Integração e Fluxo', () => {
   
-  // Teste 1: Sanidade (Renderização)
-  it('deve renderizar o cabeçalho e os campos iniciais', () => {
-    render(<App />);
-    expect(screen.getByText(/Gestor de Despesas Consciente/i)).toBeInTheDocument();
-    expect(screen.getByPlaceholderText(/R\$ 0,00/i)).toBeInTheDocument();
+  beforeEach(() => {
+    vi.clearAllMocks();
+    // Configura um retorno padrão seguro para todos os testes
+    mockedGetDollarRate.mockResolvedValue(5.20);
   });
 
-  // Teste 2: Lógica de Saldo
-  it('deve calcular o saldo corretamente (Renda - Despesa)', () => {
+  // Teste de Integração: API Pública
+  it('deve exibir a cotação do dólar vinda da API ao carregar o app', async () => {
+    mockedGetDollarRate.mockResolvedValue(5.85);
+
+    render(<App />);
+
+    // Verifica se o valor mockado aparece na tela após a promessa resolver
+    await waitFor(() => {
+      expect(screen.getByText(/R\$ 5.85/i)).toBeInTheDocument();
+    });
+    expect(screen.getByText(/Dólar Hoje/i)).toBeInTheDocument();
+  });
+
+  // Teste de Renderização e Lógica de Saldo
+  it('deve calcular o saldo corretamente (Renda - Despesa)', async () => {
     render(<App />);
     
     const inputRenda = screen.getByPlaceholderText(/R\$ 0,00/i);
     fireEvent.change(inputRenda, { target: { value: '2000' } });
 
-    const inputDesc = screen.getByPlaceholderText(/O que você comprou\/gastou\?/i);
+    const inputDesc = screen.getByPlaceholderText(/Descrição \(ex: Aluguel\)/i);
     const inputValor = screen.getByPlaceholderText(/Valor R\$/i);
     const botao = screen.getByText(/Adicionar Gasto/i);
 
-    fireEvent.change(inputDesc, { target: { value: 'Supermercado' } });
-    fireEvent.change(inputValor, { target: { value: '500' } });
+    fireEvent.change(inputDesc, { target: { value: 'Aluguel' } });
+    fireEvent.change(inputValor, { target: { value: '1200' } });
     fireEvent.click(botao);
 
-    expect(screen.getByText(/R\$ 1500.00/i)).toBeInTheDocument();
+    expect(screen.getByText(/R\$ 800.00/i)).toBeInTheDocument();
   });
 
-  // Teste 3: Feedback Visual de Saldo Negativo
-  it('deve exibir saldo negativo se as despesas superarem a renda', () => {
+  it('deve exibir saldo negativo em vermelho se as despesas superarem a renda', () => {
     render(<App />);
     
     const inputRenda = screen.getByPlaceholderText(/R\$ 0,00/i);
     fireEvent.change(inputRenda, { target: { value: '100' } });
 
-    const inputDesc = screen.getByPlaceholderText(/O que você comprou\/gastou\?/i);
+    const inputDesc = screen.getByPlaceholderText(/Descrição \(ex: Aluguel\)/i);
     const inputValor = screen.getByPlaceholderText(/Valor R\$/i);
     const botao = screen.getByText(/Adicionar Gasto/i);
 
@@ -47,15 +67,17 @@ describe('Gestor de Despesas - Testes de Fluxo Financeiro', () => {
     fireEvent.change(inputValor, { target: { value: '150' } });
     fireEvent.click(botao);
 
-    expect(screen.getByText(/R\$ -50.00/i)).toBeInTheDocument();
+    const saldo = screen.getByText(/R\$ -50.00/i);
+    expect(saldo).toBeInTheDocument();
+    
+    // Verifica se a classe 'negative' foi aplicada
+    expect(saldo.closest('.balance-card')).toHaveClass('negative');
   });
 
-  // Teste 4: Remoção de Gasto
   it('deve remover um gasto da lista e atualizar o saldo', () => {
     render(<App />);
     
-    // Adiciona um gasto
-    const inputDesc = screen.getByPlaceholderText(/O que você comprou\/gastou\?/i);
+    const inputDesc = screen.getByPlaceholderText(/Descrição \(ex: Aluguel\)/i);
     const inputValor = screen.getByPlaceholderText(/Valor R\$/i);
     const botaoAdd = screen.getByText(/Adicionar Gasto/i);
 
@@ -65,11 +87,10 @@ describe('Gestor de Despesas - Testes de Fluxo Financeiro', () => {
 
     expect(screen.getByText(/Lanche/i)).toBeInTheDocument();
 
-    // Clica no botão de excluir (X)
+    // Busca o botão pelo título que adicionamos no App.tsx
     const botaoExcluir = screen.getByTitle(/Excluir/i);
     fireEvent.click(botaoExcluir);
 
-    // Verifica se sumiu
     expect(screen.queryByText(/Lanche/i)).not.toBeInTheDocument();
   });
 });
