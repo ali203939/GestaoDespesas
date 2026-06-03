@@ -10,23 +10,25 @@ export function Login() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setLoading(true);
 
-    // Simular delay de requisição
-    setTimeout(() => {
-      const response = login(email, password);
+    try {
+      const response = await login(email, password);
       
       if (response.success) {
         navigate('/dashboard');
       } else {
         setError(response.message);
       }
-      
+    } catch (err) {
+      setError('Erro ao fazer login. Tente novamente.');
+      console.error(err);
+    } finally {
       setLoading(false);
-    }, 500);
+    }
   };
 
   return (

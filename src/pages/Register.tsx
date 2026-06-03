@@ -12,7 +12,7 @@ export function Register() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setSuccess('');
@@ -25,9 +25,8 @@ export function Register() {
       return;
     }
 
-    // Simular delay de requisição
-    setTimeout(() => {
-      const response = register(email, password);
+    try {
+      const response = await register(email, password);
       
       if (response.success) {
         setSuccess(response.message);
@@ -38,9 +37,12 @@ export function Register() {
       } else {
         setError(response.message);
       }
-      
+    } catch (err) {
+      setError('Erro ao registrar. Tente novamente.');
+      console.error(err);
+    } finally {
       setLoading(false);
-    }, 500);
+    }
   };
 
   return (
