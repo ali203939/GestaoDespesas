@@ -3,7 +3,6 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { BrowserRouter } from 'react-router-dom';
 import AppDashboard from '../AppDashboard';
 import * as api from '../services/api';
-import * as auth from '../services/auth';
 
 // 1. Mock global da API para evitar chamadas reais durante os testes
 vi.mock('../services/api', () => ({
@@ -19,7 +18,6 @@ vi.mock('../services/auth', () => ({
 
 // Criamos uma versão tipada do mock para evitar o uso de 'any'
 const mockedGetDollarRate = vi.mocked(api.getDollarRate);
-const mockedGetCurrentUser = vi.mocked(auth.getCurrentUser);
 
 // Mock do window.confirm para o teste de remoção
 window.confirm = vi.fn(() => true);
