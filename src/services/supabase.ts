@@ -9,7 +9,7 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-// Helper para obter o usuário atual
+// Obter usuário autenticado do Supabase Auth
 export async function getCurrentAuthUser() {
   const { data: { user }, error } = await supabase.auth.getUser();
   if (error) {
@@ -19,36 +19,50 @@ export async function getCurrentAuthUser() {
   return user;
 }
 
-// Helper para obter os dados do usuário no banco
-export async function getUserData(userId: string) {
-  const { data, error } = await supabase
-    .from('users')
-    .select('*')
-    .eq('auth_user_id', userId)
-    .single();
-
-  if (error) {
-    console.error('Erro ao buscar dados do usuário:', error);
-    return null;
-  }
-  return data;
+// Interface para retorno do usuário no banco (bigint ids)
+export interface UserData {
+  id: number;           // bigint
+  auth_user_id: string;
+  email: string;
+  created_at: string;
+  updated_at: string;
 }
 
-// Helper para criar/atualizar dados do usuário
-// Usa uma função PostgreSQL (SECURITY DEFINER) para contornar RLS
-export async function createOrUpdateUserData(userId: string, email: string) {
+// Obter dados do usuário no banco de dados
+export async function getUserData(authUserId: string): Promise<UserData | null> {
   try {
     const { data, error } = await supabase
-      .rpc('create_or_update_user', {
-        p_user_id: userId,
-        p_user_email: email,
+      .from('users')
+      .select('*')
+      .eq('auth_user_id', authUserId)
+      .single();
+
+    if (error) {
+      console.error('Erro ao buscar dados do usuário:', error);
+      return null;
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Erro ao buscar usuário:', error);
+    return null;
+  }
+}
+
+// Criar ou atualizar usuário usando função PostgreSQL
+export async function createOrUpdateUserData(authUserId: string, email: string): Promise<UserData | null> {
+  try {
+    const { data, error } = await supabase
+      .rpc('get_or_create_user', {
+        p_auth_user_id: authUserId,
+        p_email: email,
       });
 
     if (error) {
       console.error('Erro ao criar/atualizar usuário:', error);
       return null;
     }
-    
+
     // A função retorna um array, pega o primeiro elemento
     return data?.[0] || null;
   } catch (error) {

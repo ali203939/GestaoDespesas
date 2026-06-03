@@ -1,5 +1,175 @@
 import { supabase } from './supabase';
 
+// ============================================
+// EXPENSES - Operações com despesas
+// ============================================
+
+export interface Expense {
+  id: number;
+  user_id: number;
+  descricao: string;
+  quantidade: number;
+  categoria: 'Essencial' | 'Comida' | 'Saúde' | 'Transporte' | 'Outros';
+  created_at: string;
+  updated_at: string;
+}
+
+// Buscar despesas do usuário
+export async function getExpenses(userId: number): Promise<Expense[]> {
+  try {
+    const { data, error } = await supabase
+      .from('expenses')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Erro ao buscar despesas:', error);
+      return [];
+    }
+
+    return data || [];
+  } catch (error) {
+    console.error('Erro ao buscar despesas:', error);
+    return [];
+  }
+}
+
+// Criar despesa
+export async function createExpense(expense: Omit<Expense, 'id' | 'created_at' | 'updated_at'>): Promise<Expense | null> {
+  try {
+    const { data, error } = await supabase
+      .from('expenses')
+      .insert([{
+        user_id: expense.user_id,
+        descricao: expense.descricao,
+        quantidade: expense.quantidade,
+        categoria: expense.categoria,
+      }])
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Erro ao criar despesa:', error);
+      return null;
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Erro ao criar despesa:', error);
+    return null;
+  }
+}
+
+// Atualizar despesa
+export async function updateExpense(
+  id: number,
+  updates: Partial<Expense>
+): Promise<Expense | null> {
+  try {
+    const { data, error } = await supabase
+      .from('expenses')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Erro ao atualizar despesa:', error);
+      return null;
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Erro ao atualizar despesa:', error);
+    return null;
+  }
+}
+
+// Deletar despesa
+export async function deleteExpense(id: number): Promise<boolean> {
+  try {
+    const { error } = await supabase
+      .from('expenses')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      console.error('Erro ao deletar despesa:', error);
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Erro ao deletar despesa:', error);
+    return false;
+  }
+}
+
+// ============================================
+// USER PROFILES - Operações com perfil
+// ============================================
+
+export interface UserProfile {
+  id: number;
+  user_id: number;
+  renda_mensal: number;
+  moeda_padrao: string;
+  tema: string;
+  created_at: string;
+  updated_at: string;
+}
+
+// Buscar perfil do usuário
+export async function getUserProfile(userId: number): Promise<UserProfile | null> {
+  try {
+    const { data, error } = await supabase
+      .from('user_profiles')
+      .select('*')
+      .eq('user_id', userId)
+      .single();
+
+    if (error) {
+      console.error('Erro ao buscar perfil:', error);
+      return null;
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Erro ao buscar perfil:', error);
+    return null;
+  }
+}
+
+// Atualizar perfil do usuário
+export async function updateUserProfile(
+  userId: number,
+  updates: Partial<UserProfile>
+): Promise<UserProfile | null> {
+  try {
+    const { data, error } = await supabase
+      .from('user_profiles')
+      .update(updates)
+      .eq('user_id', userId)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Erro ao atualizar perfil:', error);
+      return null;
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Erro ao atualizar perfil:', error);
+    return null;
+  }
+}
+
+// ============================================
+// EXCHANGE RATES - Taxa de câmbio
+// ============================================
+
 export interface ExchangeRate {
   bid: string;
   name: string;
@@ -18,16 +188,6 @@ export const getDollarRate = async (): Promise<number> => {
     throw error;
   }
 };
-
-// ============================================
-// EXPENSES - Operações com despesas
-// ============================================
-
-export interface Expense {
-  id?: string;
-  user_id: string;
-  description: string;
-  amount: number;
   category: string;
   date: string;
   created_at?: string;

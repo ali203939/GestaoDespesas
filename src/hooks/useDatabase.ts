@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
-import { onAuthStateChanged } from '../services/auth';
-import { getExpenses, getUserProfile } from '../services/api';
-import type { Expense, UserProfile } from '../services/api';
 import type { User } from '@supabase/supabase-js';
+import { getUserData, type UserData } from '../services/supabase';
+import { getExpenses, getUserProfile, type Expense, type UserProfile } from '../services/api';
+import { onAuthStateChanged } from '../services/auth';
 
 export function useAuthUser() {
   const [user, setUser] = useState<User | null>(null);
@@ -22,7 +22,34 @@ export function useAuthUser() {
   return { user, loading };
 }
 
-export function useExpenses(userId: string | undefined) {
+export function useUserData(authUserId: string | null) {
+  const [userData, setUserData] = useState<UserData | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!authUserId) {
+      setLoading(false);
+      return;
+    }
+
+    const loadUserData = async () => {
+      try {
+        const data = await getUserData(authUserId);
+        setUserData(data);
+      } catch (error) {
+        console.error('Erro ao carregar dados do usuário:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadUserData();
+  }, [authUserId]);
+
+  return { userData, loading };
+}
+
+export function useExpenses(userId: number | null) {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -33,26 +60,26 @@ export function useExpenses(userId: string | undefined) {
       return;
     }
 
-    const fetchExpenses = async () => {
+    const loadExpenses = async () => {
       try {
-        setLoading(true);
         const data = await getExpenses(userId);
         setExpenses(data);
         setError(null);
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Erro ao carregar despesas');
+        const message = err instanceof Error ? err.message : 'Erro ao carregar despesas';
+        setError(message);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchExpenses();
+    loadExpenses();
   }, [userId]);
 
   return { expenses, loading, error, setExpenses };
 }
 
-export function useUserProfile(userId: string | undefined) {
+export function useUserProfile(userId: number | null) {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -63,20 +90,20 @@ export function useUserProfile(userId: string | undefined) {
       return;
     }
 
-    const fetchProfile = async () => {
+    const loadProfile = async () => {
       try {
-        setLoading(true);
         const data = await getUserProfile(userId);
         setProfile(data);
         setError(null);
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Erro ao carregar perfil');
+        const message = err instanceof Error ? err.message : 'Erro ao carregar perfil';
+        setError(message);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchProfile();
+    loadProfile();
   }, [userId]);
 
   return { profile, loading, error, setProfile };
