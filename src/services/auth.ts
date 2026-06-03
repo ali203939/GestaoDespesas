@@ -1,28 +1,13 @@
-interface User {
-  email: string;
-  password: string;
-}
+import { supabase, createOrUpdateUserData } from './supabase';
+import type { User } from '@supabase/supabase-js';
 
 interface AuthResponse {
   success: boolean;
   message: string;
-  user?: { email: string };
+  user?: { email: string; id?: string };
 }
 
-// Simular banco de dados de usuários no localStorage
-const USERS_KEY = 'users_db';
-const CURRENT_USER_KEY = 'current_user';
-
-function getStoredUsers(): User[] {
-  const stored = localStorage.getItem(USERS_KEY);
-  return stored ? JSON.parse(stored) : [];
-}
-
-function saveUsers(users: User[]): void {
-  localStorage.setItem(USERS_KEY, JSON.stringify(users));
-}
-
-export function register(email: string, password: string): AuthResponse {
+export async function register(email: string, password: string): Promise<AuthResponse> {
   // Validações
   if (!email || !password) {
     return { success: false, message: 'Email e senha são obrigatórios' };
@@ -38,47 +23,101 @@ export function register(email: string, password: string): AuthResponse {
     return { success: false, message: 'Email inválido' };
   }
 
-  const users = getStoredUsers();
-  
-  // Verificar se usuário já existe
-  if (users.some(u => u.email === email)) {
-    return { success: false, message: 'Este email já está cadastrado' };
+  try {
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+    });
+
+    if (error) {
+      return { success: false, message: error.message };
+    }
+
+    if (data.user) {
+      // Criar registro do usuário no banco de dados
+      await createOrUpdateUserData(data.user.id, email);
+    }
+
+    return { success: true, message: 'Cadastro realizado com sucesso! Verifique seu email.' };
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Erro ao registrar';
+    return { success: false, message: errorMessage };
   }
-
-  // Adicionar novo usuário
-  users.push({ email, password });
-  saveUsers(users);
-
-  return { success: true, message: 'Cadastro realizado com sucesso!' };
 }
 
-export function login(email: string, password: string): AuthResponse {
+export async function login(email: string, password: string): Promise<AuthResponse> {
   if (!email || !password) {
     return { success: false, message: 'Email e senha são obrigatórios' };
   }
 
-  const users = getStoredUsers();
-  const user = users.find(u => u.email === email && u.password === password);
+  try {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
 
-  if (!user) {
-    return { success: false, message: 'Email ou senha incorretos' };
+    if (error) {
+      return { success: false, message: error.message };
+    }
+
+    if (data.user) {
+      // Garantir que os dados do usuário existem no banco
+      await createOrUpdateUserData(data.user.id, email);
+    }
+
+    return { 
+      success: true, 
+      message: 'Login realizado com sucesso!', 
+      user: { email, id: data.user?.id } 
+    };
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Erro ao fazer login';
+    return { success: false, message: errorMessage };
   }
-
-  // Salvar usuário logado
-  localStorage.setItem(CURRENT_USER_KEY, JSON.stringify({ email }));
-  
-  return { success: true, message: 'Login realizado com sucesso!', user: { email } };
 }
 
-export function getCurrentUser(): { email: string } | null {
-  const stored = localStorage.getItem(CURRENT_USER_KEY);
-  return stored ? JSON.parse(stored) : null;
+export async function logout(): Promise<AuthResponse> {
+  try {
+    const { error } = await supabase.auth.signOut();
+
+    if (error) {
+      return { success: false, message: error.message };
+    }
+
+    return { success: true, message: 'Logout realizado com sucesso!' };
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Erro ao fazer logout';
+    return { success: false, message: errorMessage };
+  }
 }
 
-export function logout(): void {
-  localStorage.removeItem(CURRENT_USER_KEY);
+export async function getCurrentUser() {
+  try {
+    const { data: { user }, error } = await supabase.auth.getUser();
+
+    if (error || !user) {
+      return null;
+    }
+
+    return { email: user.email, id: user.id };
+  } catch (error) {
+    console.error('Erro ao obter usuário atual:', error);
+    return null;
+  }
 }
 
-export function isAuthenticated(): boolean {
-  return getCurrentUser() !== null;
+export async function isAuthenticated(): Promise<boolean> {
+  const user = await getCurrentUser();
+  return user !== null;
+}
+
+// Subscribe to auth state changes
+export function onAuthStateChanged(callback: (user: User | null) => void) {
+  const { data: { subscription } } = supabase.auth.onAuthStateChange(
+    (_event, session) => {
+      callback(session?.user ?? null);
+    }
+  );
+
+  return subscription;
 }

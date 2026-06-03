@@ -14,6 +14,11 @@ vi.mock('../services/auth', () => ({
   getCurrentUser: vi.fn(),
   logout: vi.fn(),
   isAuthenticated: vi.fn(() => true),
+  onAuthStateChanged: vi.fn((callback) => {
+    // Chama o callback com um usuário mockado
+    callback({ id: 'test-user', email: 'test@example.com' });
+    return { unsubscribe: vi.fn() };
+  }),
 }));
 
 // Criamos uma versão tipada do mock para evitar o uso de 'any'

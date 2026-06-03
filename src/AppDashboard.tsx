@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import './App.css';
 import { getDollarRate } from './services/api';
-import { getCurrentUser, logout } from './services/auth';
+import { logout } from './services/auth';
 import { useNavigate } from 'react-router-dom';
+import { useAuthUser } from './hooks/useDatabase';
 
 interface Expense {
   id: number;
@@ -21,7 +22,7 @@ function AppDashboard() {
   const [categoria, setCategoria] = useState<Expense['categoria']>('Essencial');
   const [editandoId, setEditandoId] = useState<number | null>(null);
 
-  const user = getCurrentUser();
+  const { user } = useAuthUser();
   const navigate = useNavigate();
 
  useEffect(() => {
@@ -36,8 +37,8 @@ function AppDashboard() {
     carregarCotacao();
   }, []);
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     navigate('/login');
   };
 
