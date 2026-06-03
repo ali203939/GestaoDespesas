@@ -35,20 +35,24 @@ export async function getUserData(userId: string) {
 }
 
 // Helper para criar/atualizar dados do usuário
+// Usa uma função PostgreSQL (SECURITY DEFINER) para contornar RLS
 export async function createOrUpdateUserData(userId: string, email: string) {
-  const { data, error } = await supabase
-    .from('users')
-    .upsert({
-      auth_user_id: userId,
-      email: email,
-      updated_at: new Date().toISOString(),
-    })
-    .select()
-    .single();
+  try {
+    const { data, error } = await supabase
+      .rpc('create_or_update_user', {
+        p_user_id: userId,
+        p_user_email: email,
+      });
 
-  if (error) {
-    console.error('Erro ao criar/atualizar usuário:', error);
+    if (error) {
+      console.error('Erro ao criar/atualizar usuário:', error);
+      return null;
+    }
+    
+    // A função retorna um array, pega o primeiro elemento
+    return data?.[0] || null;
+  } catch (error) {
+    console.error('Erro ao executar função:', error);
     return null;
   }
-  return data;
 }
