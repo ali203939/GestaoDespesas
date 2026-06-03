@@ -1,11 +1,19 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import App from '../App';
+import { BrowserRouter } from 'react-router-dom';
+import AppDashboard from '../AppDashboard';
 import * as api from '../services/api';
 
 // 1. Mock global da API para evitar chamadas reais durante os testes
 vi.mock('../services/api', () => ({
   getDollarRate: vi.fn(),
+}));
+
+// 2. Mock do auth para evitar problemas com localStorage
+vi.mock('../services/auth', () => ({
+  getCurrentUser: vi.fn(),
+  logout: vi.fn(),
+  isAuthenticated: vi.fn(() => true),
 }));
 
 // Criamos uma versão tipada do mock para evitar o uso de 'any'
@@ -26,7 +34,11 @@ describe('Gestor de Despesas - Testes de Integração e Fluxo', () => {
   it('deve exibir a cotação do dólar vinda da API ao carregar o app', async () => {
     mockedGetDollarRate.mockResolvedValue(5.85);
 
-    render(<App />);
+    render(
+      <BrowserRouter>
+        <AppDashboard />
+      </BrowserRouter>
+    );
 
     // Verifica se o valor mockado aparece na tela após a promessa resolver
     await waitFor(() => {
@@ -37,7 +49,11 @@ describe('Gestor de Despesas - Testes de Integração e Fluxo', () => {
 
   // Teste de Renderização e Lógica de Saldo
   it('deve calcular o saldo corretamente (Renda - Despesa)', async () => {
-    render(<App />);
+    render(
+      <BrowserRouter>
+        <AppDashboard />
+      </BrowserRouter>
+    );
     
     const inputRenda = screen.getByPlaceholderText(/R\$ 0,00/i);
     fireEvent.change(inputRenda, { target: { value: '2000' } });
@@ -54,7 +70,11 @@ describe('Gestor de Despesas - Testes de Integração e Fluxo', () => {
   });
 
   it('deve exibir saldo negativo em vermelho se as despesas superarem a renda', () => {
-    render(<App />);
+    render(
+      <BrowserRouter>
+        <AppDashboard />
+      </BrowserRouter>
+    );
     
     const inputRenda = screen.getByPlaceholderText(/R\$ 0,00/i);
     fireEvent.change(inputRenda, { target: { value: '100' } });
@@ -75,7 +95,11 @@ describe('Gestor de Despesas - Testes de Integração e Fluxo', () => {
   });
 
   it('deve remover um gasto da lista e atualizar o saldo', () => {
-    render(<App />);
+    render(
+      <BrowserRouter>
+        <AppDashboard />
+      </BrowserRouter>
+    );
     
     const inputDesc = screen.getByPlaceholderText(/Descrição \(ex: Aluguel\)/i);
     const inputValor = screen.getByPlaceholderText(/Valor R\$/i);
