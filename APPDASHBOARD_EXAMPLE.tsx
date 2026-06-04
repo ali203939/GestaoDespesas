@@ -6,28 +6,29 @@ import './src/App.css';
 import { getDollarRate, createExpense, updateExpense, deleteExpense } from './src/services/api';
 import { logout } from './src/services/auth';
 import { useNavigate } from 'react-router-dom';
-import { useAuthUser, useExpenses } from './src/hooks/useDatabase';
+import { useAuthUser, useUserProfile, useExpenses } from './src/hooks/useDatabase';
 import type { Expense } from './src/services/api';
 
 interface ExpenseForm {
-  description: string;
-  amount: string;
-  category: 'Essencial' | 'Comida' | 'Saúde' | 'Transporte' | 'Outros';
+  descricao: string;
+  quantidade: string;
+  categoria: 'Essencial' | 'Comida' | 'Saúde' | 'Transporte' | 'Outros';
 }
 
 function AppDashboard() {
   const navigate = useNavigate();
   const { user, loading: userLoading } = useAuthUser();
-  const { expenses, loading: expLoading, error: expError, setExpenses } = useExpenses(user?.id);
+  useUserProfile();
+  const { expenses, loading: expLoading, error: expError, setExpenses } = useExpenses();
 
   const [renda, setRenda] = useState<number>(0);
   const [cotacao, setCotacao] = useState<number | null>(null);
-  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<number | null>(null);
 
   const [form, setForm] = useState<ExpenseForm>({
-    description: '',
-    amount: '',
-    category: 'Essencial'
+    descricao: '',
+    quantidade: '',
+    categoria: 'Essencial'
   });
 
   // Carregar cotação do dólar
@@ -51,8 +52,8 @@ function AppDashboard() {
   const handleSaveExpense = async () => {
     if (!user?.id) return;
 
-    const amount = parseFloat(form.amount);
-    if (!form.description || isNaN(amount) || amount <= 0) {
+    const quantidade = parseFloat(form.quantidade);
+    if (!form.descricao || isNaN(quantidade) || quantidade <= 0) {
       alert('Preencha todos os campos corretamente');
       return;
     }
@@ -61,9 +62,9 @@ function AppDashboard() {
       if (editingId) {
         // Editar despesa existente
         const updated = await updateExpense(editingId, {
-          description: form.description,
-          amount: amount,
-          category: form.category,
+          descricao: form.descricao,
+          quantidade: quantidade,
+          categoria: form.categoria,
         });
         if (updated) {
           setExpenses(expenses.map((e) => e.id === editingId ? updated : e));
@@ -72,11 +73,9 @@ function AppDashboard() {
       } else {
         // Criar nova despesa
         const newExpense = await createExpense({
-          user_id: user.id,
-          description: form.description,
-          amount: amount,
-          category: form.category,
-          date: new Date().toISOString().split('T')[0],
+          descricao: form.descricao,
+          quantidade: quantidade,
+          categoria: form.categoria,
         });
         if (newExpense) {
           setExpenses([newExpense, ...expenses]);
@@ -94,14 +93,14 @@ function AppDashboard() {
       setEditingId(expense.id);
     }
     setForm({
-      description: expense.description,
-      amount: expense.amount.toString(),
-      category: expense.category as ExpenseForm['category'],
+      descricao: expense.descricao,
+      quantidade: expense.quantidade.toString(),
+      categoria: expense.categoria,
     });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleDeleteExpense = async (id: string | undefined): Promise<void> => {
+  const handleDeleteExpense = async (id: number | undefined): Promise<void> => {
     if (!id || !window.confirm("Deseja realmente excluir este gasto?")) return;
 
     try {
@@ -116,11 +115,11 @@ function AppDashboard() {
   };
 
   const resetForm = (): void => {
-    setForm({ description: '', amount: '', category: 'Essencial' });
+    setForm({ descricao: '', quantidade: '', categoria: 'Essencial' });
     setEditingId(null);
   };
 
-  const totalExpenses = expenses.reduce((acc, curr) => acc + curr.amount, 0);
+  const totalExpenses = expenses.reduce((acc, curr) => acc + curr.quantidade, 0);
   const balance = renda - totalExpenses;
 
   if (userLoading) {
@@ -174,18 +173,18 @@ function AppDashboard() {
           <div className="input-group">
             <input
               placeholder="Descrição (ex: Aluguel)"
-              value={form.description}
-              onChange={(e) => setForm({ ...form, description: e.target.value })}
+              value={form.descricao}
+              onChange={(e) => setForm({ ...form, descricao: e.target.value })}
             />
             <input
               type="number"
               placeholder="Valor R$"
-              value={form.amount}
-              onChange={(e) => setForm({ ...form, amount: e.target.value })}
+              value={form.quantidade}
+              onChange={(e) => setForm({ ...form, quantidade: e.target.value })}
             />
             <select
-              value={form.category}
-              onChange={(e) => setForm({ ...form, category: e.target.value as ExpenseForm['category'] })}
+              value={form.categoria}
+              onChange={(e) => setForm({ ...form, categoria: e.target.value as ExpenseForm['categoria'] })}
             >
               <option value="Essencial">🟢 Essencial</option>
               <option value="Saúde">🏥 Saúde</option>
@@ -222,14 +221,14 @@ function AppDashboard() {
               expenses.map((exp) => (
                 <div key={exp.id} className="expense-card">
                   <div className="exp-info">
-                    <strong>{exp.description}</strong>
-                    <span className={`tag ${exp.category.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")}`}>
-                      {exp.category}
+                    <strong>{exp.descricao}</strong>
+                    <span className={`tag ${exp.categoria.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")}`}>
+                      {exp.categoria}
                     </span>
                   </div>
 
                   <div className="exp-actions-group">
-                    <span className="exp-value">- R$ {exp.amount.toFixed(2)}</span>
+                    <span className="exp-value">- R$ {exp.quantidade.toFixed(2)}</span>
                     <div className="action-buttons">
                       <button className="btn-icon edit" onClick={() => handleEditExpense(exp)} title='Editar'>✎</button>
                       <button className="btn-icon delete" onClick={() => handleDeleteExpense(exp.id)} title='Excluir'>✕</button>

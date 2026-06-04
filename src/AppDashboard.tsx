@@ -1,31 +1,34 @@
 import { useState, useEffect } from 'react';
 import './App.css';
-import { getDollarRate } from './services/api';
+import { getDollarRate, createExpense, updateExpense, deleteExpense, getExpenses } from './services/api';
 import { logout } from './services/auth';
 import { useNavigate } from 'react-router-dom';
-import { useAuthUser } from './hooks/useDatabase';
+import { useAuthUser, useExpenses } from './hooks/useDatabase';
+import type { Expense } from './services/api';
 
-interface Expense {
-  id: number;
+interface ExpenseForm {
   descricao: string;
-  quantidade: number;
+  quantidade: string;
   categoria: 'Essencial' | 'Comida' | 'Saúde' | 'Transporte' | 'Outros';
 }
 
 function AppDashboard() {
-  const [expenses, setExpenses] = useState<Expense[]>([]);
+  const navigate = useNavigate();
+  const { user, loading: userLoading } = useAuthUser();
+  const { expenses, loading: expLoading, error: expError, setExpenses } = useExpenses();
+
   const [renda, setRenda] = useState<number>(0);
   const [cotacao, setCotacao] = useState<number | null>(null);
+  const [editingId, setEditingId] = useState<number | null>(null);
 
-  const [descricao, setDescricao] = useState('');
-  const [quantidade, setQuantidade] = useState('');
-  const [categoria, setCategoria] = useState<Expense['categoria']>('Essencial');
-  const [editandoId, setEditandoId] = useState<number | null>(null);
+  const [form, setForm] = useState<ExpenseForm>({
+    descricao: '',
+    quantidade: '',
+    categoria: 'Essencial'
+  });
 
-  const { user } = useAuthUser();
-  const navigate = useNavigate();
-
- useEffect(() => {
+  // Carregar cotação do dólar
+  useEffect(() => {
     const carregarCotacao = async () => {
       try {
         const valor = await getDollarRate();
@@ -37,51 +40,98 @@ function AppDashboard() {
     carregarCotacao();
   }, []);
 
+  // Recarregar despesas quando usuário muda
+  useEffect(() => {
+    if (user?.id) {
+      const carregarDespesas = async () => {
+        const dados = await getExpenses();
+        setExpenses(dados);
+      };
+      carregarDespesas();
+    }
+  }, [user?.id, setExpenses]);
+
   const handleLogout = async () => {
     await logout();
     navigate('/login');
   };
 
-  const salvarDespesa = () => {
-    const valorNum = parseFloat(quantidade);
-    if (!descricao || isNaN(valorNum) || valorNum <= 0) return;
+  const handleSaveExpense = async () => {
+    if (!user?.id) return;
 
-    if (editandoId !== null) {
-      setExpenses(expenses.map(exp => 
-        exp.id === editandoId 
-        ? { ...exp, descricao, quantidade: valorNum, categoria } 
-        : exp
-      ));
-      setEditandoId(null);
-    } else {
-      const novaDespesa: Expense = {
-        id: Date.now(),
-        descricao,
-        quantidade: valorNum,
-        categoria
-      };
-      setExpenses([novaDespesa, ...expenses]);
+    const quantidade = parseFloat(form.quantidade);
+    if (!form.descricao || isNaN(quantidade) || quantidade <= 0) {
+      alert('Preencha todos os campos corretamente');
+      return;
     }
-    setDescricao('');
-    setQuantidade('');
+
+    try {
+      if (editingId) {
+        // Editar despesa existente
+        const updated = await updateExpense(editingId, {
+          descricao: form.descricao,
+          quantidade: quantidade,
+          categoria: form.categoria,
+        });
+        if (updated) {
+          setExpenses(expenses.map((e) => e.id === editingId ? updated : e));
+          resetForm();
+        }
+      } else {
+        // Criar nova despesa
+        const newExpense = await createExpense({
+          descricao: form.descricao,
+          quantidade: quantidade,
+          categoria: form.categoria,
+        });
+        if (newExpense) {
+          setExpenses([newExpense, ...expenses]);
+          resetForm();
+        }
+      }
+    } catch (err) {
+      console.error('Erro ao salvar despesa:', err);
+      alert('Erro ao salvar despesa');
+    }
   };
 
-  const prepararEdicao = (exp: Expense) => {
-    setEditandoId(exp.id);
-    setDescricao(exp.descricao);
-    setQuantidade(exp.quantidade.toString());
-    setCategoria(exp.categoria);
+  const handleEditExpense = (expense: Expense): void => {
+    if (expense.id) {
+      setEditingId(expense.id);
+    }
+    setForm({
+      descricao: expense.descricao,
+      quantidade: expense.quantidade.toString(),
+      categoria: expense.categoria,
+    });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const removerDespesa = (id: number) => {
-    if (window.confirm("Deseja realmente excluir este gasto?")) {
-      setExpenses(expenses.filter(exp => exp.id !== id));
+  const handleDeleteExpense = async (id: number | undefined): Promise<void> => {
+    if (!id || !window.confirm("Deseja realmente excluir este gasto?")) return;
+
+    try {
+      const success = await deleteExpense(id);
+      if (success) {
+        setExpenses(expenses.filter(e => e.id !== id));
+      }
+    } catch (err) {
+      console.error('Erro ao deletar despesa:', err);
+      alert('Erro ao deletar despesa');
     }
+  };
+
+  const resetForm = (): void => {
+    setForm({ descricao: '', quantidade: '', categoria: 'Essencial' });
+    setEditingId(null);
   };
 
   const totalDespesas = expenses.reduce((acc, curr) => acc + curr.quantidade, 0);
   const saldoFinal = renda - totalDespesas;
+
+  if (userLoading) {
+    return <div className="loading">Carregando...</div>;
+  }
 
   return (
     <div className="app-wrapper">
@@ -103,6 +153,7 @@ function AppDashboard() {
           <input 
             type="number" 
             placeholder="R$ 0,00"
+            value={renda}
             onChange={(e) => setRenda(Number(e.target.value) || 0)}
           />
         </div>
@@ -125,22 +176,22 @@ function AppDashboard() {
         
         {/* FORMULÁRIO */}
         <section className="form-container">
-          <h3>{editandoId !== null ? '📝 Editar Gasto' : '✨ Nova Transação'}</h3>
+          <h3>{editingId !== null ? '📝 Editar Gasto' : '✨ Nova Transação'}</h3>
           <div className="input-group">
             <input 
               placeholder="Descrição (ex: Aluguel)" 
-              value={descricao}
-              onChange={(e) => setDescricao(e.target.value)}
+              value={form.descricao}
+              onChange={(e) => setForm({ ...form, descricao: e.target.value })}
             />
             <input 
               type="number" 
               placeholder="Valor R$" 
-              value={quantidade}
-              onChange={(e) => setQuantidade(e.target.value)}
+              value={form.quantidade}
+              onChange={(e) => setForm({ ...form, quantidade: e.target.value })}
             />
             <select 
-              value={categoria} 
-              onChange={(e) => setCategoria(e.target.value as Expense['categoria'])}
+              value={form.categoria} 
+              onChange={(e) => setForm({ ...form, categoria: e.target.value as ExpenseForm['categoria'] })}
             >
               <option value="Essencial">🟢 Essencial</option>
               <option value="Saúde">🏥 Saúde</option>
@@ -150,14 +201,14 @@ function AppDashboard() {
             </select>
             
             <button 
-              className={`btn-add ${editandoId !== null ? 'btn-edit-mode' : ''}`} 
-              onClick={salvarDespesa}
+              className={`btn-add ${editingId !== null ? 'btn-edit-mode' : ''}`} 
+              onClick={handleSaveExpense}
             >
-              {editandoId !== null ? 'Confirmar Edição' : 'Adicionar Gasto'}
+              {editingId !== null ? 'Confirmar Edição' : 'Adicionar Gasto'}
             </button>
             
-            {editandoId !== null && (
-              <button className="btn-cancel" onClick={() => {setEditandoId(null); setDescricao(''); setQuantidade('');}}>
+            {editingId !== null && (
+              <button className="btn-cancel" onClick={resetForm}>
                 Cancelar Edição
               </button>
             )}
@@ -167,6 +218,8 @@ function AppDashboard() {
         {/* LISTAGEM */}
         <section className="list-container">
           <h3>Histórico de Gastos ({expenses.length})</h3>
+          {expLoading && <p>Carregando despesas...</p>}
+          {expError && <p style={{ color: 'red' }}>{expError}</p>}
           <div className="scroll-area">
             {expenses.length === 0 && (
               <p className="empty-msg">Nenhum gasto registrado ainda.</p>
@@ -184,8 +237,8 @@ function AppDashboard() {
                 <div className="exp-actions-group">
                   <span className="exp-value">- R$ {exp.quantidade.toFixed(2)}</span>
                   <div className="action-buttons">
-                    <button className="btn-icon edit" onClick={() => prepararEdicao(exp)} title='Editar'>✎</button>
-                    <button className="btn-icon delete" onClick={() => removerDespesa(exp.id)} title='Excluir'>✕</button>
+                    <button className="btn-icon edit" onClick={() => handleEditExpense(exp)} title='Editar'>✎</button>
+                    <button className="btn-icon delete" onClick={() => handleDeleteExpense(exp.id)} title='Excluir'>✕</button>
                   </div>
                 </div>
               </div>

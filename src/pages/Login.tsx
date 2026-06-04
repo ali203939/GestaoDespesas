@@ -21,7 +21,7 @@ export function Login() {
       if (response.success) {
         navigate('/dashboard');
       } else {
-        setError(response.message);
+        setError(response.message || 'Erro ao fazer login');
       }
     } catch (err) {
       setError('Erro ao fazer login. Tente novamente.');

@@ -29,13 +29,13 @@ export function Register() {
       const response = await register(email, password);
       
       if (response.success) {
-        setSuccess(response.message);
+        setSuccess(response.message || 'Registrado com sucesso!');
         // Redirecionar para login após 1.5 segundos
         setTimeout(() => {
           navigate('/login');
         }, 1500);
       } else {
-        setError(response.message);
+        setError(response.message || 'Erro ao registrar');
       }
     } catch (err) {
       setError('Erro ao registrar. Tente novamente.');

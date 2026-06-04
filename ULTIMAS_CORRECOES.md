@@ -30,7 +30,7 @@ BEGIN
   VALUES (p_auth_user_id, p_email, NOW(), NOW())
   ON CONFLICT (auth_user_id) 
   DO UPDATE SET 
-    email = p_email,
+    email = EXCLUDED.email,
     updated_at = NOW()
   RETURNING users.id, users.auth_user_id, users.email, users.created_at, users.updated_at;
 END;
