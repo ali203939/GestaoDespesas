@@ -1,10 +1,22 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { BrowserRouter } from 'react-router-dom';
-import AppDashboard from '../AppDashboard';
 import * as api from '../services/api';
 
-// 1. Mock global da API para evitar chamadas reais durante os testes
+// Mock do Supabase ANTES de qualquer outro import
+vi.mock('../services/supabase', () => ({
+  supabase: {
+    auth: {
+      getUser: vi.fn(),
+    },
+    from: vi.fn(),
+  },
+  getCurrentAuthUser: vi.fn(),
+  getUserData: vi.fn(),
+  createOrUpdateUserData: vi.fn(),
+}));
+
+// Mock global da API para evitar chamadas reais durante os testes
 vi.mock('../services/api', async (importOriginal) => {
   const actual = await importOriginal();
   return {
@@ -17,7 +29,7 @@ vi.mock('../services/api', async (importOriginal) => {
   };
 });
 
-// 2. Mock do auth para evitar problemas com localStorage
+// Mock do auth para evitar problemas com localStorage
 vi.mock('../services/auth', () => ({
   getCurrentUser: vi.fn(),
   logout: vi.fn(),
@@ -28,6 +40,9 @@ vi.mock('../services/auth', () => ({
     return { unsubscribe: vi.fn() };
   }),
 }));
+
+// Agora importamos AppDashboard DEPOIS dos mocks
+import AppDashboard from '../AppDashboard';
 
 // Criamos versões tipadas dos mocks para evitar o uso de 'any'
 const mockedGetDollarRate = vi.mocked(api.getDollarRate);
