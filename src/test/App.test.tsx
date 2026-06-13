@@ -18,7 +18,7 @@ vi.mock('../services/supabase', () => ({
 
 // Mock global da API para evitar chamadas reais durante os testes
 vi.mock('../services/api', async (importOriginal) => {
-  const actual = await importOriginal();
+  const actual = await importOriginal() as Record<string, unknown>;
   return {
     ...actual,
     getDollarRate: vi.fn(),
