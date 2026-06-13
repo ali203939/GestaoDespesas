@@ -26,10 +26,9 @@ export const getDollarRate = async (): Promise<number> => {
 export interface Expense {
   id?: string;
   user_id: string;
-  description: string;
-  amount: number;
-  category: string;
-  date: string;
+  descricao: string;
+  quantidade: number;
+  categoria: string;
   created_at?: string;
   updated_at?: string;
 }
@@ -40,7 +39,7 @@ export async function getExpenses(userId: string) {
       .from('expenses')
       .select('*')
       .eq('user_id', userId)
-      .order('date', { ascending: false });
+      .order('created_at', { ascending: false });
 
     if (error) throw error;
     return data;

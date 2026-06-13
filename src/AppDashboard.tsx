@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
 import './App.css';
-import { getDollarRate } from './services/api';
+import { getDollarRate, getExpenses, createExpense, updateExpense, deleteExpense, type Expense as ApiExpense } from './services/api';
 import { logout } from './services/auth';
 import { useNavigate } from 'react-router-dom';
 import { useAuthUser } from './hooks/useDatabase';
 
 interface Expense {
-  id: number;
+  id?: string;
   descricao: string;
   quantidade: number;
   categoria: 'Essencial' | 'Comida' | 'Saúde' | 'Transporte' | 'Outros';
@@ -16,16 +16,48 @@ function AppDashboard() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [renda, setRenda] = useState<number>(0);
   const [cotacao, setCotacao] = useState<number | null>(null);
+  const [carregando, setCarregando] = useState(true);
 
   const [descricao, setDescricao] = useState('');
   const [quantidade, setQuantidade] = useState('');
   const [categoria, setCategoria] = useState<Expense['categoria']>('Essencial');
-  const [editandoId, setEditandoId] = useState<number | null>(null);
+  const [editandoId, setEditandoId] = useState<string | null>(null);
 
   const { user } = useAuthUser();
   const navigate = useNavigate();
 
- useEffect(() => {
+  // Carregar despesas do banco quando o usuário faz login
+  useEffect(() => {
+    const carregarDespesas = async () => {
+      if (!user?.id) {
+        setCarregando(false);
+        return;
+      }
+
+      try {
+        setCarregando(true);
+        const dados = await getExpenses(user.id);
+        
+        // Converter dados do banco para o formato da aplicação
+        const despesasFormatadas = dados?.map((item: any) => ({
+          id: item.id?.toString(),
+          descricao: item.descricao,
+          quantidade: item.quantidade,
+          categoria: item.categoria
+        })) || [];
+        
+        setExpenses(despesasFormatadas);
+      } catch (err) {
+        console.error('Erro ao carregar despesas:', err);
+      } finally {
+        setCarregando(false);
+      }
+    };
+
+    carregarDespesas();
+  }, [user?.id]);
+
+  useEffect(() => {
     const carregarCotacao = async () => {
       try {
         const valor = await getDollarRate();
@@ -42,41 +74,76 @@ function AppDashboard() {
     navigate('/login');
   };
 
-  const salvarDespesa = () => {
+  const salvarDespesa = async () => {
     const valorNum = parseFloat(quantidade);
-    if (!descricao || isNaN(valorNum) || valorNum <= 0) return;
+    if (!descricao || isNaN(valorNum) || valorNum <= 0 || !user?.id) return;
 
-    if (editandoId !== null) {
-      setExpenses(expenses.map(exp => 
-        exp.id === editandoId 
-        ? { ...exp, descricao, quantidade: valorNum, categoria } 
-        : exp
-      ));
-      setEditandoId(null);
-    } else {
-      const novaDespesa: Expense = {
-        id: Date.now(),
-        descricao,
-        quantidade: valorNum,
-        categoria
-      };
-      setExpenses([novaDespesa, ...expenses]);
+    try {
+      if (editandoId !== null) {
+        // Atualizar despesa existente
+        const despesaAtualizada = await updateExpense(editandoId, {
+          user_id: user.id,
+          descricao: descricao,
+          quantidade: valorNum,
+          categoria: categoria
+        });
+
+        if (despesaAtualizada) {
+          setExpenses(expenses.map(exp => 
+            exp.id === editandoId 
+            ? { ...exp, descricao, quantidade: valorNum, categoria } 
+            : exp
+          ));
+          setEditandoId(null);
+        }
+      } else {
+        // Criar nova despesa
+        const novaDespesa = await createExpense({
+          user_id: user.id,
+          descricao: descricao,
+          quantidade: valorNum,
+          categoria: categoria
+        });
+
+        if (novaDespesa) {
+          const despesaFormatada: Expense = {
+            id: novaDespesa.id?.toString(),
+            descricao,
+            quantidade: valorNum,
+            categoria
+          };
+          setExpenses([despesaFormatada, ...expenses]);
+        }
+      }
+      setDescricao('');
+      setQuantidade('');
+    } catch (err) {
+      console.error('Erro ao salvar despesa:', err);
+      alert('Erro ao salvar despesa');
     }
-    setDescricao('');
-    setQuantidade('');
   };
 
   const prepararEdicao = (exp: Expense) => {
-    setEditandoId(exp.id);
+    setEditandoId(exp.id || null);
     setDescricao(exp.descricao);
     setQuantidade(exp.quantidade.toString());
     setCategoria(exp.categoria);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const removerDespesa = (id: number) => {
+  const removerDespesa = async (id: string | undefined) => {
+    if (!id) return;
+    
     if (window.confirm("Deseja realmente excluir este gasto?")) {
-      setExpenses(expenses.filter(exp => exp.id !== id));
+      try {
+        const sucesso = await deleteExpense(id);
+        if (sucesso) {
+          setExpenses(expenses.filter(exp => exp.id !== id));
+        }
+      } catch (err) {
+        console.error('Erro ao deletar despesa:', err);
+        alert('Erro ao deletar despesa');
+      }
     }
   };
 
@@ -168,11 +235,15 @@ function AppDashboard() {
         <section className="list-container">
           <h3>Histórico de Gastos ({expenses.length})</h3>
           <div className="scroll-area">
-            {expenses.length === 0 && (
+            {carregando && (
+              <p className="empty-msg">Carregando despesas...</p>
+            )}
+            
+            {!carregando && expenses.length === 0 && (
               <p className="empty-msg">Nenhum gasto registrado ainda.</p>
             )}
             
-            {expenses.map(exp => (
+            {!carregando && expenses.map(exp => (
               <div key={exp.id} className="expense-card">
                 <div className="exp-info">
                   <strong>{exp.descricao}</strong>
