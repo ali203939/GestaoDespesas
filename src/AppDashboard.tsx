@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import './App.css';
-import { getDollarRate, getExpenses, createExpense, updateExpense, deleteExpense, type Expense as ApiExpense } from './services/api';
+import { getDollarRate, getExpenses, createExpense, updateExpense, deleteExpense } from './services/api';
 import { logout } from './services/auth';
 import { useNavigate } from 'react-router-dom';
 import { useAuthUser } from './hooks/useDatabase';
@@ -39,11 +39,11 @@ function AppDashboard() {
         const dados = await getExpenses(user.id);
         
         // Converter dados do banco para o formato da aplicação
-        const despesasFormatadas = dados?.map((item: any) => ({
+        const despesasFormatadas = dados?.map((item: { id?: string | number; descricao: string; quantidade: number; categoria: string }) => ({
           id: item.id?.toString(),
           descricao: item.descricao,
           quantidade: item.quantidade,
-          categoria: item.categoria
+          categoria: item.categoria as Expense['categoria']
         })) || [];
         
         setExpenses(despesasFormatadas);
