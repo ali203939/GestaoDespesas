@@ -32,6 +32,10 @@ function AppDashboard() {
   const [categoria, setCategoria] = useState<Expense['categoria']>('Essencial');
   const [editandoId, setEditandoId] = useState<string | null>(null);
 
+  // 🔍 NOVOS ESTADOS PARA O SEU FILTRO
+  const [busca, setBusca] = useState<string>('');
+  const [categoriaFiltrada, setCategoriaFiltrada] = useState<string>('Todas');
+
   const { user } = useAuthUser();
   const { profile } = useUserProfile(user?.id);
   const navigate = useNavigate();
@@ -199,6 +203,13 @@ const handleRendaBlur = () => {
     }
   };
 
+  // ⚙️ LÓGICA DE FILTRAGEM DINÂMICA
+  const despesasFiltradas = expenses.filter((exp) => {
+    const matchesBusca = exp.descricao.toLowerCase().includes(busca.toLowerCase());
+    const matchesCategoria = categoriaFiltrada === 'Todas' || exp.categoria === categoriaFiltrada;
+    return matchesBusca && matchesCategoria;
+  });
+
   const totalDespesas = expenses.reduce((acc, curr) => acc + curr.quantidade, 0);
   const saldoFinal = renda - totalDespesas;
 
@@ -292,17 +303,43 @@ const handleRendaBlur = () => {
         </section>
 
         <section className="list-container">
-          <h3>Histórico de Gastos ({expenses.length})</h3>
+          <h3>Histórico de Gastos ({despesasFiltradas.length})</h3>
+
+          {/* 🔍 BARRA DE FILTROS ADICIONADA */}
+          <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
+            <input
+              type="text"
+              placeholder="🔍 Buscar por descrição..."
+              value={busca}
+              onChange={(e) => setBusca(e.target.value)}
+              style={{ flex: 1, padding: '10px', borderRadius: '6px', border: '1px solid #444', backgroundColor: '#2a2a2a', color: '#fff' }}
+            />
+            <select
+              value={categoriaFiltrada}
+              onChange={(e) => setCategoriaFiltrada(e.target.value)}
+              style={{ padding: '10px', borderRadius: '6px', border: '1px solid #444', backgroundColor: '#2a2a2a', color: '#fff', cursor: 'pointer' }}
+            >
+              <option value="Todas">📁 Todas as Categorias</option>
+              <option value="Essencial">🟢 Essencial</option>
+              <option value="Saúde">🏥 Saúde</option>
+              <option value="Transporte">🚗 Transporte</option>
+              <option value="Comida">🍕 Comida</option>
+              <option value="Outros">⚪ Outros</option>
+            </select>
+          </div>
+
           <div className="scroll-area">
-            {carregando && (
-              <p className="empty-msg">Carregando despesas...</p>
-            )}
-            
-            {!carregando && expenses.length === 0 && (
-              <p className="empty-msg">Nenhum gasto registrado ainda.</p>
-            )}
-            
-            {!carregando && expenses.map(exp => (
+{carregando && (
+  <p className="empty-msg">Carregando despesas...</p>
+)}
+
+{!carregando && despesasFiltradas.length === 0 && (
+  <p className="empty-msg">
+    {expenses.length === 0 ? "Nenhum gasto registrado ainda." : "Nenhum gasto encontrado para essa busca."}
+  </p>
+)}
+
+{!carregando && despesasFiltradas.map(exp => (
               <div key={exp.id} className="expense-card">
                 <div className="exp-info">
                   <strong>{exp.descricao}</strong>
