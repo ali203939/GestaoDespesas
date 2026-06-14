@@ -13,6 +13,15 @@
 
 ---
 
+## 👥 Integrantes do Projeto
+
+ **Ali de Brito**
+ **Miguel Miranda**
+ **Filipe Fialho**
+ **Gabriel Lorenzi**
+
+---
+
 ## 🎯 Sobre o Projeto
 O **Gestor de Despesas Consciente** é uma ferramenta de gestão financeira pessoal que permite aos utilizadores controlar a sua saúde financeira de forma intuitiva. A aplicação combina funcionalidades de registo de gastos (CRUD) com dados externos em tempo real para auxiliar na tomada de decisões.
 
@@ -32,10 +41,12 @@ Este projeto foi desenvolvido como parte da **Entrega Intermediária do BootCamp
 - **Design 100% Responsivo:** Otimizado para desktop, tablet e mobile (320px a 1920px)
 
 ## 🛠️ Tecnologias Utilizadas
+
 - **Frontend:** [React 19](https://react.dev/) com [TypeScript](https://www.typescriptlang.org/) e [Vite](https://vitejs.dev/).
 - **Roteamento:** [React Router DOM v6](https://reactrouter.com/)
 - **Testes:** [Vitest](https://vitest.dev/) e [React Testing Library](https://testing-library.com/).
-- **Database:** [PostgreSQL](https://www.postgresql.org/) via [Supabase](https://supabase.com/)
+- **Database:** [PostgreSQL](https://www.postgresql.org/) + [Supabase](https://supabase.com/) (Backend as a Service)
+- **Autenticação:** Supabase Auth com email/senha
 - **Hospedagem Frontend:** [Vercel](https://vercel.com/).
 - **CI/CD:** [GitHub Actions](https://github.com/features/actions) (Lint, Testes & Build).
 
@@ -128,16 +139,23 @@ npm run lint
 npm run build
 ```
 
-### 📊 Estrutura do Banco de Dados
+### 📊 Estrutura do Banco de Dados (PostgreSQL + Supabase)
 
-O projeto utiliza 4 tabelas principais no PostgreSQL (via Supabase):
+O projeto utiliza **PostgreSQL** hospedado no **Supabase** com 4 tabelas principais:
 
 | Tabela | Descrição |
 |--------|-----------|
-| **users** | Armazena dados de autenticação dos utilizadores |
-| **expenses** | Registra todas as despesas dos utilizadores |
-| **user_profiles** | Perfil e configurações de cada utilizador |
-| **exchange_rates_log** | Histórico de cotações de moedas |
+| **auth.users** | Utilizadores autenticados (gerenciado pelo Supabase Auth) |
+| **public.users** | Dados adicionais dos utilizadores vinculados à autenticação |
+| **public.expenses** | Registra todas as despesas dos utilizadores |
+| **public.user_profiles** | Perfil, configurações e renda mensal de cada utilizador |
+| **public.exchange_rates_log** | Histórico de cotações de moedas (USD/BRL) |
+
+#### Segurança - Row Level Security (RLS):
+- ✅ **Políticas RLS ativas:** Cada utilizador só pode aceder aos seus próprios dados
+- ✅ **Autenticação integrada:** Supabase Auth com email/senha
+- ✅ **Validações automáticas:** Constraints e triggers no banco
+- ✅ **Proteção:** Contra SQL injection e acesso não autorizado
 
 #### Diagrama Relacional:
 ```
@@ -162,15 +180,6 @@ O arquivo `schema.sql` contém:
 - ✅ Row Level Security (RLS) para proteção de dados
 - ✅ Views úteis para analytics
 - ✅ Dados de exemplo (comentados)
-
-### 🔐 Segurança - Row Level Security (RLS)
-
-O banco de dados implementa **Row Level Security** para garantir que cada utilizador veja apenas os seus próprios dados:
-
-- ✅ Utilizadores só podem ver suas próprias despesas
-- ✅ Utilizadores só podem editar/deletar suas próprias despesas
-- ✅ Autenticação integrada com Supabase Auth
-- ✅ Proteção contra SQL injection e acesso não autorizado
 
 ---
 

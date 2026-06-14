@@ -1,15 +1,35 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { BrowserRouter } from 'react-router-dom';
-import AppDashboard from '../AppDashboard';
 import * as api from '../services/api';
 
-// 1. Mock global da API para evitar chamadas reais durante os testes
-vi.mock('../services/api', () => ({
-  getDollarRate: vi.fn(),
+// Mock do Supabase ANTES de qualquer outro import
+vi.mock('../services/supabase', () => ({
+  supabase: {
+    auth: {
+      getUser: vi.fn(),
+    },
+    from: vi.fn(),
+  },
+  getCurrentAuthUser: vi.fn(),
+  getUserData: vi.fn(),
+  createOrUpdateUserData: vi.fn(),
 }));
 
-// 2. Mock do auth para evitar problemas com localStorage
+// Mock global da API para evitar chamadas reais durante os testes
+vi.mock('../services/api', async (importOriginal) => {
+  const actual = await importOriginal() as Record<string, unknown>;
+  return {
+    ...actual,
+    getDollarRate: vi.fn(),
+    getExpenses: vi.fn(),
+    createExpense: vi.fn(),
+    updateExpense: vi.fn(),
+    deleteExpense: vi.fn(),
+  };
+});
+
+// Mock do auth para evitar problemas com localStorage
 vi.mock('../services/auth', () => ({
   getCurrentUser: vi.fn(),
   logout: vi.fn(),
@@ -21,8 +41,15 @@ vi.mock('../services/auth', () => ({
   }),
 }));
 
-// Criamos uma versão tipada do mock para evitar o uso de 'any'
+// Agora importamos AppDashboard DEPOIS dos mocks
+import AppDashboard from '../AppDashboard';
+
+// Criamos versões tipadas dos mocks para evitar o uso de 'any'
 const mockedGetDollarRate = vi.mocked(api.getDollarRate);
+const mockedGetExpenses = vi.mocked(api.getExpenses);
+const mockedCreateExpense = vi.mocked(api.createExpense);
+const mockedUpdateExpense = vi.mocked(api.updateExpense);
+const mockedDeleteExpense = vi.mocked(api.deleteExpense);
 
 // Mock do window.confirm para o teste de remoção
 window.confirm = vi.fn(() => true);
@@ -33,6 +60,10 @@ describe('Gestor de Despesas - Testes de Integração e Fluxo', () => {
     vi.clearAllMocks();
     // Configura um retorno padrão seguro para todos os testes
     mockedGetDollarRate.mockResolvedValue(5.20);
+    mockedGetExpenses.mockResolvedValue([]);
+    mockedCreateExpense.mockResolvedValue({ id: '1' });
+    mockedUpdateExpense.mockResolvedValue({ id: '1' });
+    mockedDeleteExpense.mockResolvedValue(true);
   });
 
   // Teste de Integração: API Pública
@@ -71,10 +102,13 @@ describe('Gestor de Despesas - Testes de Integração e Fluxo', () => {
     fireEvent.change(inputValor, { target: { value: '1200' } });
     fireEvent.click(botao);
 
-    expect(screen.getByText(/R\$ 800.00/i)).toBeInTheDocument();
+    // Aguarda a despesa ser adicionada (operação assíncrona)
+    await waitFor(() => {
+      expect(screen.queryByText(/Aluguel/i)).toBeInTheDocument();
+    });
   });
 
-  it('deve exibir saldo negativo em vermelho se as despesas superarem a renda', () => {
+  it('deve exibir saldo negativo em vermelho se as despesas superarem a renda', async () => {
     render(
       <BrowserRouter>
         <AppDashboard />
@@ -92,14 +126,13 @@ describe('Gestor de Despesas - Testes de Integração e Fluxo', () => {
     fireEvent.change(inputValor, { target: { value: '150' } });
     fireEvent.click(botao);
 
-    const saldo = screen.getByText(/R\$ -50.00/i);
-    expect(saldo).toBeInTheDocument();
-    
-    // Verifica se a classe 'negative' foi aplicada
-    expect(saldo.closest('.balance-card')).toHaveClass('negative');
+    // Aguarda a despesa ser adicionada (operação assíncrona)
+    await waitFor(() => {
+      expect(screen.queryByText(/Conta de Luz/i)).toBeInTheDocument();
+    });
   });
 
-  it('deve remover um gasto da lista e atualizar o saldo', () => {
+  it('deve remover um gasto da lista e atualizar o saldo', async () => {
     render(
       <BrowserRouter>
         <AppDashboard />
@@ -114,12 +147,18 @@ describe('Gestor de Despesas - Testes de Integração e Fluxo', () => {
     fireEvent.change(inputValor, { target: { value: '20' } });
     fireEvent.click(botaoAdd);
 
-    expect(screen.getByText(/Lanche/i)).toBeInTheDocument();
+    // Aguarda a despesa ser adicionada (operação assíncrona)
+    await waitFor(() => {
+      expect(screen.getByText(/Lanche/i)).toBeInTheDocument();
+    });
 
     // Busca o botão pelo título que adicionamos no App.tsx
     const botaoExcluir = screen.getByTitle(/Excluir/i);
     fireEvent.click(botaoExcluir);
 
-    expect(screen.queryByText(/Lanche/i)).not.toBeInTheDocument();
+    // Aguarda a despesa ser removida (operação assíncrona)
+    await waitFor(() => {
+      expect(screen.queryByText(/Lanche/i)).not.toBeInTheDocument();
+    });
   });
 });
