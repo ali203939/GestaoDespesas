@@ -106,22 +106,27 @@ function AppDashboard() {
 
   // Salvar renda no banco com debounce (espera 800ms após parar de digitar)
   const salvarRenda = useCallback(async (novaRenda: number) => {
-    if (!user?.id) return;
-    try {
-      await updateUserProfile(user.id, { renda_mensal: novaRenda });
-    } catch (err) {
-      console.error('Erro ao salvar renda:', err);
-    }
-  }, [user?.id]);
+  if (!user?.id) return;
+  try {
+    await updateUserProfile(user.id, {
+      user_id: user.id,
+      renda_mensal: novaRenda
+    });
+    console.log('Renda salva:', novaRenda);
+  } catch (err) {
+    console.error('Erro ao salvar renda:', err);
+  }
+}, [user?.id]);
 
-  const handleRendaChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const novaRenda = Number(e.target.value) || 0;
-    setRenda(novaRenda);
+const handleRendaChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const valor = e.target.value;
+  const novaRenda = valor === '' ? 0 : parseFloat(valor);
+  setRenda(novaRenda);
+};
 
-    // Salva no banco após 800ms sem digitar
-    const timer = setTimeout(() => salvarRenda(novaRenda), 800);
-    return () => clearTimeout(timer);
-  };
+const handleRendaBlur = () => {
+  salvarRenda(renda);
+};
 
   const salvarDespesa = async () => {
     const valorNum = parseFloat(quantidade);
@@ -214,11 +219,12 @@ function AppDashboard() {
         <div className="balance-card incoming">
           <span>Renda Total (R$)</span>
           <input 
-            type="number" 
+             type="number" 
             placeholder="R$ 0,00"
             value={renda || ''}
             onChange={handleRendaChange}
-          />
+            onBlur={handleRendaBlur}
+            />  
         </div>
 
         <div className={`balance-card status ${saldoFinal < 0 ? 'negative' : 'positive'}`}>
