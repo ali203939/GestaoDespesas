@@ -108,6 +108,7 @@ export interface UserProfile {
   phone?: string;
   avatar_url?: string;
   currency?: string;
+  renda_mensal?: number; 
   created_at?: string;
   updated_at?: string;
 }
