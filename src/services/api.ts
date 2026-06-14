@@ -148,3 +148,16 @@ export async function updateUserProfile(userId: string, profile: Partial<UserPro
     return null;
   }
 }
+
+
+export const getBitcoinRate = async (): Promise<number> => {
+  try {
+
+    const response = await fetch('https://api.binance.com/api/v3/ticker/price?symbol=BTCBRL');
+    const data = await response.json();
+    return parseFloat(data.price);
+  } catch (error) {
+    console.error('Erro ao buscar cotação do Bitcoin:', error);
+    return 0; 
+  }
+};
