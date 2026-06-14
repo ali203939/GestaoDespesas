@@ -23,6 +23,10 @@ function AppDashboard() {
   const [categoria, setCategoria] = useState<Expense['categoria']>('Essencial');
   const [editandoId, setEditandoId] = useState<number | null>(null);
 
+  // 🔍 NOVOS ESTADOS PARA O SEU FILTRO
+  const [busca, setBusca] = useState<string>('');
+  const [categoriaFiltrada, setCategoriaFiltrada] = useState<string>('Todas');
+
   const { user } = useAuthUser();
   const navigate = useNavigate();
 
@@ -48,7 +52,6 @@ function AppDashboard() {
     carregarCotacao();
     carregarBitcoin();
     
-    // Opcional: Atualiza o Bitcoin a cada 30 segundos
     const btcInterval = setInterval(carregarBitcoin, 30000);
     return () => clearInterval(btcInterval);
   }, []);
@@ -96,6 +99,13 @@ function AppDashboard() {
     }
   };
 
+  // ⚙️ LÓGICA DE FILTRAGEM DINÂMICA
+  const despesasFiltradas = expenses.filter((exp) => {
+    const matchesBusca = exp.descricao.toLowerCase().includes(busca.toLowerCase());
+    const matchesCategoria = categoriaFiltrada === 'Todas' || exp.categoria === categoriaFiltrada;
+    return matchesBusca && matchesCategoria;
+  });
+
   const totalDespesas = expenses.reduce((acc, curr) => acc + curr.quantidade, 0);
   const saldoFinal = renda - totalDespesas;
 
@@ -135,7 +145,6 @@ function AppDashboard() {
           </div>
         )}
 
-        {/* WIDGET DO BITCOIN ADICIONADO AQUI */}
         {btcPrice && (
           <div className="balance-card quote" style={{ backgroundColor: '#fff3cd', borderColor: '#ffeeba' }}>
             <span>Bitcoin Hoje (BTC)</span>
@@ -192,13 +201,38 @@ function AppDashboard() {
 
         {/* LISTAGEM */}
         <section className="list-container">
-          <h3>Histórico de Gastos ({expenses.length})</h3>
+          <h3>Histórico de Gastos ({despesasFiltradas.length})</h3>
+
+          {/* 🔍 BARRA DE FILTROS ADICIONADA */}
+          <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
+            <input
+              type="text"
+              placeholder="🔍 Buscar por descrição..."
+              value={busca}
+              onChange={(e) => setBusca(e.target.value)}
+              style={{ flex: 1, padding: '10px', borderRadius: '6px', border: '1px solid #444', backgroundColor: '#2a2a2a', color: '#fff' }}
+            />
+            <select
+              value={categoriaFiltrada}
+              onChange={(e) => setCategoriaFiltrada(e.target.value)}
+              style={{ padding: '10px', borderRadius: '6px', border: '1px solid #444', backgroundColor: '#2a2a2a', color: '#fff', cursor: 'pointer' }}
+            >
+              <option value="Todas">📁 Todas as Categorias</option>
+              <option value="Essencial">🟢 Essencial</option>
+              <option value="Saúde">🏥 Saúde</option>
+              <option value="Transporte">🚗 Transporte</option>
+              <option value="Comida">🍕 Comida</option>
+              <option value="Outros">⚪ Outros</option>
+            </select>
+          </div>
+
           <div className="scroll-area">
-            {expenses.length === 0 && (
-              <p className="empty-msg">Nenhum gasto registrado ainda.</p>
+            {despesasFiltradas.length === 0 && (
+              <p className="empty-msg">Nenhum gasto encontrado para essa busca.</p>
             )}
             
-            {expenses.map(exp => (
+            {/* RENDERIZANDO A LISTA FILTRADA */}
+            {despesasFiltradas.map(exp => (
               <div key={exp.id} className="expense-card">
                 <div className="exp-info">
                   <strong>{exp.descricao}</strong>
