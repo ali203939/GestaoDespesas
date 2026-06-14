@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import './App.css';
-import { getDollarRate } from './services/api';
+import { getDollarRate, getBitcoinRate } from './services/api';
 import { logout } from './services/auth';
 import { useNavigate } from 'react-router-dom';
 import { useAuthUser } from './hooks/useDatabase';
@@ -16,6 +16,7 @@ function AppDashboard() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [renda, setRenda] = useState<number>(0);
   const [cotacao, setCotacao] = useState<number | null>(null);
+  const [btcPrice, setBtcPrice] = useState<number | null>(null);
 
   const [descricao, setDescricao] = useState('');
   const [quantidade, setQuantidade] = useState('');
@@ -25,16 +26,31 @@ function AppDashboard() {
   const { user } = useAuthUser();
   const navigate = useNavigate();
 
- useEffect(() => {
+  useEffect(() => {
     const carregarCotacao = async () => {
       try {
         const valor = await getDollarRate();
         setCotacao(valor);
       } catch (err) { 
-        console.error("Não foi possível carregar a cotação:", err);
+        console.error("Não foi possível carregar a cotação do Dólar:", err);
       }
     };
+    
+    const carregarBitcoin = async () => {
+      try {
+        const valorBtc = await getBitcoinRate();
+        if (valorBtc > 0) setBtcPrice(valorBtc);
+      } catch (err) {
+        console.error("Não foi possível carregar a cotação do Bitcoin:", err);
+      }
+    };
+
     carregarCotacao();
+    carregarBitcoin();
+    
+    // Opcional: Atualiza o Bitcoin a cada 30 segundos
+    const btcInterval = setInterval(carregarBitcoin, 30000);
+    return () => clearInterval(btcInterval);
   }, []);
 
   const handleLogout = async () => {
@@ -116,6 +132,16 @@ function AppDashboard() {
           <div className="balance-card quote">
             <span>Dólar Hoje (USD)</span>
             <h2>R$ {cotacao.toFixed(2)}</h2>
+          </div>
+        )}
+
+        {/* WIDGET DO BITCOIN ADICIONADO AQUI */}
+        {btcPrice && (
+          <div className="balance-card quote" style={{ backgroundColor: '#fff3cd', borderColor: '#ffeeba' }}>
+            <span>Bitcoin Hoje (BTC)</span>
+            <h2 style={{ color: '#856404' }}>
+              {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(btcPrice)}
+            </h2>
           </div>
         )}
       </section>
