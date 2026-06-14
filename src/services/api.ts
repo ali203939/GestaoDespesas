@@ -108,6 +108,7 @@ export interface UserProfile {
   phone?: string;
   avatar_url?: string;
   currency?: string;
+  renda_mensal?: number; 
   created_at?: string;
   updated_at?: string;
 }
@@ -130,15 +131,15 @@ export async function getUserProfile(userId: string) {
 
 export async function updateUserProfile(userId: string, profile: Partial<UserProfile>) {
   try {
-    const { data, error } = await supabase
-      .from('user_profiles')
-      .upsert({
-        ...profile,
-        user_id: userId,
-        updated_at: new Date().toISOString(),
-      })
-      .select()
-      .single();
+   const { data, error } = await supabase
+  .from('user_profiles')
+  .upsert({
+    ...profile,
+    user_id: userId,
+    updated_at: new Date().toISOString(),
+  }, { onConflict: 'user_id' })
+  .select()
+  .single();
 
     if (error) throw error;
     return data;

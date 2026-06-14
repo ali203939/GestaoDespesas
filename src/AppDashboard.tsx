@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import './App.css';
 import { 
   getDollarRate,
@@ -6,11 +6,12 @@ import {
   getExpenses,
   createExpense,
   updateExpense,
-  deleteExpense
+  deleteExpense,
+  updateUserProfile
 } from './services/api';
 import { logout } from './services/auth';
 import { useNavigate } from 'react-router-dom';
-import { useAuthUser } from './hooks/useDatabase';
+import { useAuthUser, useUserProfile } from './hooks/useDatabase';
 
 interface Expense {
   id?: string;
@@ -36,7 +37,15 @@ function AppDashboard() {
   const [categoriaFiltrada, setCategoriaFiltrada] = useState<string>('Todas');
 
   const { user } = useAuthUser();
+  const { profile } = useUserProfile(user?.id);
   const navigate = useNavigate();
+
+  // Carregar renda do banco quando o perfil for carregado
+  useEffect(() => {
+    if (profile?.renda_mensal !== undefined && profile.renda_mensal !== null) {
+      setRenda(Number(profile.renda_mensal));
+    }
+  }, [profile]);
 
   // Carregar despesas do banco quando o usuário faz login
   useEffect(() => {
@@ -50,7 +59,6 @@ function AppDashboard() {
         setCarregando(true);
         const dados = await getExpenses(user.id);
         
-        // Converter dados do banco para o formato da aplicação
         const despesasFormatadas = dados?.map((item: { id?: string | number; descricao: string; quantidade: number; categoria: string }) => ({
           id: item.id?.toString(),
           descricao: item.descricao,
@@ -100,13 +108,36 @@ function AppDashboard() {
     navigate('/login');
   };
 
+  // Salvar renda no banco com debounce (espera 800ms após parar de digitar)
+  const salvarRenda = useCallback(async (novaRenda: number) => {
+  if (!user?.id) return;
+  try {
+    await updateUserProfile(user.id, {
+      user_id: user.id,
+      renda_mensal: novaRenda
+    });
+    console.log('Renda salva:', novaRenda);
+  } catch (err) {
+    console.error('Erro ao salvar renda:', err);
+  }
+}, [user?.id]);
+
+const handleRendaChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const valor = e.target.value;
+  const novaRenda = valor === '' ? 0 : parseFloat(valor);
+  setRenda(novaRenda);
+};
+
+const handleRendaBlur = () => {
+  salvarRenda(renda);
+};
+
   const salvarDespesa = async () => {
     const valorNum = parseFloat(quantidade);
     if (!descricao || isNaN(valorNum) || valorNum <= 0 || !user?.id) return;
 
     try {
       if (editandoId !== null) {
-        // Atualizar despesa existente
         const despesaAtualizada = await updateExpense(editandoId, {
           user_id: user.id,
           descricao: descricao,
@@ -123,7 +154,6 @@ function AppDashboard() {
           setEditandoId(null);
         }
       } else {
-        // Criar nova despesa
         const novaDespesa = await createExpense({
           user_id: user.id,
           descricao: descricao,
@@ -196,15 +226,16 @@ function AppDashboard() {
         <p>Sua saúde financeira em um só lugar.</p>
       </header>
 
-      {/* DASHBOARD COM CARDS */}
       <section className="dashboard">
         <div className="balance-card incoming">
           <span>Renda Total (R$)</span>
           <input 
-            type="number" 
+             type="number" 
             placeholder="R$ 0,00"
-            onChange={(e) => setRenda(Number(e.target.value) || 0)}
-          />
+            value={renda || ''}
+            onChange={handleRendaChange}
+            onBlur={handleRendaBlur}
+            />  
         </div>
 
         <div className={`balance-card status ${saldoFinal < 0 ? 'negative' : 'positive'}`}>
@@ -229,10 +260,8 @@ function AppDashboard() {
         )}
       </section>
 
-      {/* CONTEÚDO PRINCIPAL */}
       <main className="main-content">
         
-        {/* FORMULÁRIO */}
         <section className="form-container">
           <h3>{editandoId !== null ? '📝 Editar Gasto' : '✨ Nova Transação'}</h3>
           <div className="input-group">
@@ -273,7 +302,6 @@ function AppDashboard() {
           </div>
         </section>
 
-        {/* LISTAGEM */}
         <section className="list-container">
           <h3>Histórico de Gastos ({despesasFiltradas.length})</h3>
 
