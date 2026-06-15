@@ -9,7 +9,7 @@
 ![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)
 
 ## 🚀 Link do Projeto Online
-**Aceda à aplicação aqui:** [Gestor de Despesas Consciente — Deploy Vercel](https://gestao-despesas-of003rkik-ali203939s-projects.vercel.app/)
+**Aceda à aplicação aqui:** [Gestor de Despesas Consciente — Deploy Vercel]([https://gestao-despesas-of003rkik-ali203939s-projects.vercel.app/](https://gestao-despesas-14zv6vco3-ali203939s-projects.vercel.app/login))
 
 ---
 
