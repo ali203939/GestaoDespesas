@@ -211,9 +211,9 @@ function AppDashboard() {
 
         {/* WIDGET DO BITCOIN ADICIONADO AQUI */}
         {btcPrice && (
-          <div className="balance-card quote" style={{ backgroundColor: '#fff3cd', borderColor: '#ffeeba' }}>
+          <div className="balance-card quote">
             <span>Bitcoin Hoje (BTC)</span>
-            <h2 style={{ color: '#856404' }}>
+            <h2>
               {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(btcPrice)}
             </h2>
           </div>
