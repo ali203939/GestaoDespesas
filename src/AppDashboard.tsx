@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import './App.css';
 import { 
   getDollarRate,
@@ -6,11 +6,12 @@ import {
   getExpenses,
   createExpense,
   updateExpense,
-  deleteExpense
+  deleteExpense,
+  updateUserProfile
 } from './services/api';
 import { logout } from './services/auth';
 import { useNavigate } from 'react-router-dom';
-import { useAuthUser } from './hooks/useDatabase';
+import { useAuthUser, useUserProfile } from './hooks/useDatabase';
 
 interface Expense {
   id?: string;
@@ -31,8 +32,20 @@ function AppDashboard() {
   const [categoria, setCategoria] = useState<Expense['categoria']>('Essencial');
   const [editandoId, setEditandoId] = useState<string | null>(null);
 
+  // 🔍 NOVOS ESTADOS PARA O SEU FILTRO
+  const [busca, setBusca] = useState<string>('');
+  const [categoriaFiltrada, setCategoriaFiltrada] = useState<string>('Todas');
+
   const { user } = useAuthUser();
+  const { profile } = useUserProfile(user?.id);
   const navigate = useNavigate();
+
+  // Carregar renda do banco quando o perfil for carregado
+  useEffect(() => {
+    if (profile?.renda_mensal !== undefined && profile.renda_mensal !== null) {
+      setRenda(Number(profile.renda_mensal));
+    }
+  }, [profile]);
 
   // Carregar despesas do banco quando o usuário faz login
   useEffect(() => {
@@ -46,7 +59,6 @@ function AppDashboard() {
         setCarregando(true);
         const dados = await getExpenses(user.id);
         
-        // Converter dados do banco para o formato da aplicação
         const despesasFormatadas = dados?.map((item: { id?: string | number; descricao: string; quantidade: number; categoria: string }) => ({
           id: item.id?.toString(),
           descricao: item.descricao,
@@ -87,7 +99,6 @@ function AppDashboard() {
     carregarCotacao();
     carregarBitcoin();
     
-    // Opcional: Atualiza o Bitcoin a cada 30 segundos
     const btcInterval = setInterval(carregarBitcoin, 30000);
     return () => clearInterval(btcInterval);
   }, []);
@@ -97,13 +108,36 @@ function AppDashboard() {
     navigate('/login');
   };
 
+  // Salvar renda no banco com debounce (espera 800ms após parar de digitar)
+  const salvarRenda = useCallback(async (novaRenda: number) => {
+  if (!user?.id) return;
+  try {
+    await updateUserProfile(user.id, {
+      user_id: user.id,
+      renda_mensal: novaRenda
+    });
+    console.log('Renda salva:', novaRenda);
+  } catch (err) {
+    console.error('Erro ao salvar renda:', err);
+  }
+}, [user?.id]);
+
+const handleRendaChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const valor = e.target.value;
+  const novaRenda = valor === '' ? 0 : parseFloat(valor);
+  setRenda(novaRenda);
+};
+
+const handleRendaBlur = () => {
+  salvarRenda(renda);
+};
+
   const salvarDespesa = async () => {
     const valorNum = parseFloat(quantidade);
     if (!descricao || isNaN(valorNum) || valorNum <= 0 || !user?.id) return;
 
     try {
       if (editandoId !== null) {
-        // Atualizar despesa existente
         const despesaAtualizada = await updateExpense(editandoId, {
           user_id: user.id,
           descricao: descricao,
@@ -120,7 +154,6 @@ function AppDashboard() {
           setEditandoId(null);
         }
       } else {
-        // Criar nova despesa
         const novaDespesa = await createExpense({
           user_id: user.id,
           descricao: descricao,
@@ -170,6 +203,13 @@ function AppDashboard() {
     }
   };
 
+  // ⚙️ LÓGICA DE FILTRAGEM DINÂMICA
+  const despesasFiltradas = expenses.filter((exp) => {
+    const matchesBusca = exp.descricao.toLowerCase().includes(busca.toLowerCase());
+    const matchesCategoria = categoriaFiltrada === 'Todas' || exp.categoria === categoriaFiltrada;
+    return matchesBusca && matchesCategoria;
+  });
+
   const totalDespesas = expenses.reduce((acc, curr) => acc + curr.quantidade, 0);
   const saldoFinal = renda - totalDespesas;
 
@@ -186,15 +226,16 @@ function AppDashboard() {
         <p>Sua saúde financeira em um só lugar.</p>
       </header>
 
-      {/* DASHBOARD COM CARDS */}
       <section className="dashboard">
         <div className="balance-card incoming">
           <span>Renda Total (R$)</span>
           <input 
-            type="number" 
+             type="number" 
             placeholder="R$ 0,00"
-            onChange={(e) => setRenda(Number(e.target.value) || 0)}
-          />
+            value={renda || ''}
+            onChange={handleRendaChange}
+            onBlur={handleRendaBlur}
+            />  
         </div>
 
         <div className={`balance-card status ${saldoFinal < 0 ? 'negative' : 'positive'}`}>
@@ -209,7 +250,6 @@ function AppDashboard() {
           </div>
         )}
 
-        {/* WIDGET DO BITCOIN ADICIONADO AQUI */}
         {btcPrice && (
           <div className="balance-card quote">
             <span>Bitcoin Hoje (BTC)</span>
@@ -220,10 +260,8 @@ function AppDashboard() {
         )}
       </section>
 
-      {/* CONTEÚDO PRINCIPAL */}
       <main className="main-content">
         
-        {/* FORMULÁRIO */}
         <section className="form-container">
           <h3>{editandoId !== null ? '📝 Editar Gasto' : '✨ Nova Transação'}</h3>
           <div className="input-group">
@@ -264,19 +302,44 @@ function AppDashboard() {
           </div>
         </section>
 
-        {/* LISTAGEM */}
         <section className="list-container">
-          <h3>Histórico de Gastos ({expenses.length})</h3>
+          <h3>Histórico de Gastos ({despesasFiltradas.length})</h3>
+
+          {/* 🔍 BARRA DE FILTROS ADICIONADA */}
+          <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
+            <input
+              type="text"
+              placeholder="🔍 Buscar por descrição..."
+              value={busca}
+              onChange={(e) => setBusca(e.target.value)}
+              style={{ flex: 1, padding: '10px', borderRadius: '6px', border: '1px solid #444', backgroundColor: '#2a2a2a', color: '#fff' }}
+            />
+            <select
+              value={categoriaFiltrada}
+              onChange={(e) => setCategoriaFiltrada(e.target.value)}
+              style={{ padding: '10px', borderRadius: '6px', border: '1px solid #444', backgroundColor: '#2a2a2a', color: '#fff', cursor: 'pointer' }}
+            >
+              <option value="Todas">📁 Todas as Categorias</option>
+              <option value="Essencial">🟢 Essencial</option>
+              <option value="Saúde">🏥 Saúde</option>
+              <option value="Transporte">🚗 Transporte</option>
+              <option value="Comida">🍕 Comida</option>
+              <option value="Outros">⚪ Outros</option>
+            </select>
+          </div>
+
           <div className="scroll-area">
-            {carregando && (
-              <p className="empty-msg">Carregando despesas...</p>
-            )}
-            
-            {!carregando && expenses.length === 0 && (
-              <p className="empty-msg">Nenhum gasto registrado ainda.</p>
-            )}
-            
-            {!carregando && expenses.map(exp => (
+{carregando && (
+  <p className="empty-msg">Carregando despesas...</p>
+)}
+
+{!carregando && despesasFiltradas.length === 0 && (
+  <p className="empty-msg">
+    {expenses.length === 0 ? "Nenhum gasto registrado ainda." : "Nenhum gasto encontrado para essa busca."}
+  </p>
+)}
+
+{!carregando && despesasFiltradas.map(exp => (
               <div key={exp.id} className="expense-card">
                 <div className="exp-info">
                   <strong>{exp.descricao}</strong>
