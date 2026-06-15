@@ -36,19 +36,59 @@ export async function getUserData(userId: string) {
 
 // Helper para criar/atualizar dados do usuário
 export async function createOrUpdateUserData(userId: string, email: string) {
-  const { data, error } = await supabase
-    .from('users')
-    .upsert({
-      auth_user_id: userId,
-      email: email,
-      updated_at: new Date().toISOString(),
-    })
-    .select()
-    .single();
+  try {
+    // Primeiro, tentar buscar o usuário
+    const { data: existingUser, error: searchError } = await supabase
+      .from('users')
+      .select('*')
+      .eq('auth_user_id', userId)
+      .single();
 
-  if (error) {
+    // Se o usuário existe, atualizar
+    if (existingUser) {
+      const { data, error } = await supabase
+        .from('users')
+        .update({
+          email: email,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('auth_user_id', userId)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Erro ao atualizar usuário:', error);
+        return null;
+      }
+      return data;
+    }
+
+    // Se não existe, inserir
+    if (searchError?.code === 'PGRST116') { // No rows found
+      const { data, error } = await supabase
+        .from('users')
+        .insert({
+          auth_user_id: userId,
+          email: email,
+          updated_at: new Date().toISOString(),
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Erro ao criar usuário:', error);
+        return null;
+      }
+      return data;
+    }
+
+    // Outro erro na busca
+    if (searchError) {
+      console.error('Erro ao buscar usuário:', searchError);
+      return null;
+    }
+  } catch (error) {
     console.error('Erro ao criar/atualizar usuário:', error);
     return null;
   }
-  return data;
 }
